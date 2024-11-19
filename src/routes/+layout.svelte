@@ -1,17 +1,24 @@
 <script lang="ts">
-	import { setupViewTransition } from 'sveltekit-view-transition';
 	import Footer from '$lib/components/Footer.svelte';
 	import Header from '$lib/components/Header.svelte';
+	import { trpc } from '$lib/trpc';
+	import { QueryClientProvider } from '@tanstack/svelte-query';
+	import { setupViewTransition } from 'sveltekit-view-transition';
+
 	import '../app.css';
 
 	setupViewTransition();
+
 	let { children, data } = $props();
+	let queryClient = trpc.hydrateFromServer(data.trpc);
 </script>
 
 <div>
-	<Header session={data.session} user={data.user} />
-	{@render children()}
-	<Footer />
+	<QueryClientProvider client={queryClient}>
+		<Header session={data.session} user={data.user} />
+		{@render children()}
+		<Footer />
+	</QueryClientProvider>
 </div>
 
 <style>

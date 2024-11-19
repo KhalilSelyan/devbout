@@ -10,14 +10,22 @@
  */
 const PAGES = {
   "/": `/`,
-  "/hackathons": `/hackathons`
+  "/hackathons": `/hackathons`,
+  "/hackathons/[id]": (params: { id: (string | number) }) => {
+    return `/hackathons/${params.id}`
+  }
 }
 
 /**
  * SERVERS
  */
 const SERVERS = {
-  
+  "GET /api/trpc/[...trpc]": (params: { trpc: (string | number)[] }) => {
+    return `/api/trpc/${params.trpc?.join('/')}`
+  },
+  "POST /api/trpc/[...trpc]": (params: { trpc: (string | number)[] }) => {
+    return `/api/trpc/${params.trpc?.join('/')}`
+  }
 }
 
 /**
@@ -131,9 +139,9 @@ export function route<T extends keyof AllTypes>(key: T, ...params: any[]): strin
 * ```
 */
 export type KIT_ROUTES = {
-  PAGES: { '/': never, '/hackathons': never }
-  SERVERS: Record<string, never>
+  PAGES: { '/': never, '/hackathons': never, '/hackathons/[id]': 'id' }
+  SERVERS: { 'GET /api/trpc/[...trpc]': 'trpc', 'POST /api/trpc/[...trpc]': 'trpc' }
   ACTIONS: Record<string, never>
   LINKS: Record<string, never>
-  Params: Record<string, never>
+  Params: { id: never, trpc: never }
 }
