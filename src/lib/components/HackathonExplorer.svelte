@@ -4,6 +4,7 @@
 	import * as Select from '$lib/components/ui/select/index.js';
 	import { Badge } from './ui/badge';
 	import { Card, CardContent, CardHeader } from './ui/card';
+	import { route } from '$lib/ROUTES';
 	// Writable stores for search term and status filter
 	let searchTerm = $state('');
 	let statusFilter = $state<'DRAFT' | 'OPEN' | 'ONGOING' | 'COMPLETED' | 'ALL'>('ALL');
@@ -161,7 +162,12 @@
 		</CardContent>
 		<div class="flex justify-between border-t p-4">
 			<Button class=" border px-4 py-2">View Details</Button>
-			<Button class="flex items-center px-4 py-2 ">
+			<Button
+				href={route('/hackathons/[id]', {
+					id: hackathon.id
+				})}
+				class="flex items-center px-4 py-2 "
+			>
 				Join Hackathon
 				<ChevronRight class="ml-2 h-4 w-4" />
 			</Button>
