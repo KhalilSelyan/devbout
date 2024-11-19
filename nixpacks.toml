@@ -1,2 +1,6 @@
 [phases.setup]
-nixPkgs = ['nodejs_20']
+nixPkgs = ['nodejs_20', 'nodePackages.pnpm']
+cmds = ['corepack enable']
+
+[phases.install]
+cmds = ['pnpm install --frozen-lockfile']
