@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
+	import { route } from '$lib/ROUTES';
 	import { ChevronRight, Globe, Trophy, Users, Zap, DollarSign, Target, Code } from 'lucide-svelte';
 
 	// Feature cards data
@@ -60,7 +61,7 @@
 
 <main class="relative">
 	<div
-		class="absolute left-1/2 top-0 size-[600px] -translate-x-1/2 rounded-full bg-amber-300 opacity-20 blur-3xl"
+		class="absolute left-1/2 top-0 -z-10 size-[600px] -translate-x-1/2 rounded-full bg-emerald-500 opacity-20 blur-3xl"
 	></div>
 	<div class="container relative z-10 mx-auto px-4 py-16 text-center">
 		<h2 class="mb-6 text-4xl font-bold tracking-tight sm:text-6xl">
@@ -73,17 +74,11 @@
 		</p>
 
 		<div class="mt-10 flex justify-center gap-4">
-			<Button size="lg" class="bg-amber-600 text-white hover:bg-amber-700">
+			<Button href={route('/hackathons')} size="lg">
 				Explore Hackathons
 				<ChevronRight class="ml-2 h-4 w-4" />
 			</Button>
-			<Button
-				size="lg"
-				variant="outline"
-				class="border-amber-600 text-amber-900 hover:bg-amber-100"
-			>
-				Host a Hackathon
-			</Button>
+			<Button size="lg" variant="outline">Host a Hackathon</Button>
 		</div>
 	</div>
 
@@ -92,7 +87,7 @@
 			{#each features as feature}
 				<div class="rounded-lg bg-white p-6 text-center shadow-md">
 					<div class="mb-4 flex justify-center">
-						<feature.icon class="h-10 w-10 text-amber-600" />
+						<feature.icon class="h-10 w-10 text-primary" />
 					</div>
 					<h3 class="mb-2 text-lg font-semibold text-gray-900">{feature.title}</h3>
 					<p class="text-gray-600">{feature.description}</p>
@@ -109,13 +104,13 @@
 					<div class="rounded-lg bg-white p-6 shadow-md">
 						<div class="mb-4 flex items-center justify-between">
 							<h4 class="text-xl font-semibold">{leaderboard.title}</h4>
-							<leaderboard.icon class="h-6 w-6 text-amber-600" />
+							<leaderboard.icon class="h-6 w-6 text-primary" />
 						</div>
 						<ul class="space-y-2">
 							{#each leaderboard.leaders as leader, index}
 								<li class="flex items-center justify-between border-b py-2 last:border-b-0">
 									<span class="flex items-center">
-										<span class="w-6 font-bold text-amber-600">{index + 1}.</span>
+										<span class="w-6 font-bold text-primary">{index + 1}.</span>
 										{leader.name}
 									</span>
 									<span class="font-semibold">{leader.score}</span>
@@ -126,11 +121,7 @@
 				{/each}
 			</div>
 			<div class="mt-12 text-center">
-				<Button
-					variant="outline"
-					size="lg"
-					class="border-amber-600 text-amber-900 hover:bg-amber-100"
-				>
+				<Button variant="outline" size="lg" class="border-primary text-primary">
 					View Full Leaderboard
 				</Button>
 			</div>
