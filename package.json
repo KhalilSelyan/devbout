@@ -40,6 +40,7 @@
 		"@tailwindcss/container-queries": "^0.1.1",
 		"@tailwindcss/forms": "^0.5.9",
 		"@tailwindcss/typography": "^0.5.15",
+		"better-auth": "0.8.7-beta.4",
 		"drizzle-orm": "^0.33.0",
 		"postgres": "^3.4.4"
 	}
