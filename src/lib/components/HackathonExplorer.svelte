@@ -5,7 +5,7 @@
 	import { Badge } from './ui/badge';
 	import { Card, CardContent, CardHeader } from './ui/card';
 	import { route } from '$lib/ROUTES';
-	// Writable stores for search term and status filter
+
 	let searchTerm = $state('');
 	let statusFilter = $state<'DRAFT' | 'OPEN' | 'ONGOING' | 'COMPLETED' | 'ALL'>('ALL');
 	type Hackathon = {
