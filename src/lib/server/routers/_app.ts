@@ -1,23 +1,8 @@
-import { router, publicProcedure, authedProcedure } from '$lib/server/trpc';
-import { z } from 'zod';
+import { router } from '$lib/server/trpc';
+import { hackathonRouter } from './hackathon';
 
 export const appRouter = router({
-	greeting: publicProcedure
-		.input(
-			z.object({
-				name: z.string().optional()
-			})
-		)
-		.query(({ input }) => {
-			return `Welcome to ${input.name ?? 'the world'}!`;
-		}),
-	me: publicProcedure.query(({ ctx }) => {
-		return ctx.user;
-	}),
-	secret: authedProcedure.query(({ ctx }) => {
-		// This is a protected route
-		return `Hello, ${ctx.user.name}!`;
-	})
+	hackathon: hackathonRouter
 });
 
 export type AppRouter = typeof appRouter;
