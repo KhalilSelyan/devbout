@@ -113,7 +113,7 @@ export const hackathon = pgTable(
 		basePrize: text('basePrize').default('0'),
 		fundingType: fundingTypeEnum('fundingType').notNull(),
 		status: hackathonStatusEnum('status').notNull().default('DRAFT'),
-		judgingCriteria: json('judgingCriteria').$type<Record<string, number>>(),
+		judgingCriteria: json('judgingCriteria').$type<{ name: string; weight: number }[]>(),
 		aiGeneratedTopics: json('aiGeneratedTopics').$type<string[]>(),
 		createdAt: timestamp('createdAt').notNull().defaultNow(),
 		updatedAt: timestamp('updatedAt').notNull().defaultNow()
