@@ -10,6 +10,8 @@ export const hackathonSchema = z
 			.string()
 			.trim()
 			.min(10, { message: 'Description must be at least 10 characters long' }),
+		startDate: z.date(),
+		endDate: z.date(),
 		minTeamSize: z.string().min(1, { message: 'Minimum team size must be at least 1' }),
 		maxTeamSize: z.string().min(1, { message: 'Maximum team size must be at least 1' }),
 		// .refine((max) => Number(max) >= 1, {

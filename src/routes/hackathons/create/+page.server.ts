@@ -1,3 +1,4 @@
+import { hackathonService } from '$lib/server/db/hackathonService.js';
 import { hackathonSchema } from '$lib/zodValidations/hackathonSchema.js';
 import { superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
@@ -7,6 +8,8 @@ export const load = async () => {
 		defaults: {
 			name: '',
 			description: '',
+			startDate: new Date(),
+			endDate: new Date(),
 			minTeamSize: '1',
 			maxTeamSize: '5',
 			basePrize: '0',
@@ -36,9 +39,16 @@ export const actions = {
 			};
 		}
 
+		if (!event.locals.user?.id) return;
+
 		try {
-			// Add your database operation here
-			// For example: await db.hackathon.create({ data: form.data });
+			await hackathonService.createHackathon({
+				...form.data,
+				minTeamSize: Number(form.data.minTeamSize),
+				maxTeamSize: Number(form.data.maxTeamSize),
+				status: 'DRAFT',
+				organizerId: event.locals.user.id
+			});
 
 			return {
 				form,

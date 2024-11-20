@@ -13,12 +13,14 @@
 	import { Slider } from '$lib/components/ui/slider';
 	import { Switch } from '$lib/components/ui/switch';
 	import { Textarea } from '$lib/components/ui/textarea';
+	import DateRangePicker from '$lib/components/ui/date-range-picker/DateRangePicker.svelte';
 	import { hackathonSchema } from '$lib/zodValidations/hackathonSchema';
 	import { DollarSign, Trash2 } from 'lucide-svelte';
 	import { superForm, type Infer, type SuperValidated } from 'sveltekit-superforms';
 	import { zod } from 'sveltekit-superforms/adapters';
 	import * as z from 'zod';
-
+	import type { DateRange } from 'bits-ui';
+	import { CalendarDate } from '@internationalized/date';
 	// Type inference for form values
 	type HackathonFormValues = z.infer<typeof hackathonSchema>;
 
@@ -26,6 +28,8 @@
 	const defaultValues: HackathonFormValues = {
 		name: '',
 		description: '',
+		startDate: new Date(),
+		endDate: new Date(),
 		minTeamSize: '1',
 		maxTeamSize: '5',
 		basePrize: '0',
@@ -81,6 +85,22 @@
 	function isValidCriteria() {
 		return $form.judgingCriteria.every((c) => c.name.trim() !== '') && getTotalWeight() === 100;
 	}
+
+	const today = new Date();
+	const startDate = new CalendarDate(today.getFullYear(), today.getMonth() + 1, today.getDate());
+	const endDate = startDate.add({ days: 20 });
+
+	let dateValue: DateRange = $state({
+		start: startDate,
+		end: endDate
+	});
+
+	const updateDateValue = (date: DateRange) => {
+		if (!date.end || !date.start) return;
+		dateValue = date;
+		$form.startDate = date.start.toDate('utc');
+		$form.endDate = date.end.toDate('utc');
+	};
 </script>
 
 <div class="min-h-screen bg-background">
@@ -117,12 +137,22 @@
 						{/if}
 					</div>
 
+					<div class="flex flex-col gap-2">
+						<label for="dateRange">Date Range</label>
+						<DateRangePicker {updateDateValue} />
+						<div hidden>
+							<label for="startDate">start</label>
+							<input id="startDate" type="datetime" name="startDate" bind:value={dateValue.start} />
+							<label for="endDate">end</label>
+							<input id="endDate" type="datetime" name="endDate" bind:value={dateValue.end} />
+						</div>
+					</div>
+
 					<div class="flex gap-4">
 						<div class="flex w-full flex-col gap-2">
 							<label for="minTeamSize">Min Team Size</label>
 							<Input
 								id="minTeamSize"
-								type="number"
 								name="minTeamSize"
 								bind:value={$form.minTeamSize}
 								oninput={validateTeamSizes}
@@ -136,7 +166,6 @@
 							<label for="maxTeamSize">Max Team Size</label>
 							<Input
 								id="maxTeamSize"
-								type="number"
 								name="maxTeamSize"
 								bind:value={$form.maxTeamSize}
 								oninput={validateTeamSizes}
@@ -191,7 +220,13 @@
 					</div>
 
 					<div class="flex flex-col gap-2">
-						<label for="judgingcriteria">Judging Criteria</label>
+						<div class="flex items-center justify-between">
+							<label for="judgingcriteria">Judging Criteria</label>
+							<span>Total Weight: {getTotalWeight()}%</span>
+							{#if getTotalWeight() !== 100}
+								<span class="text-destructive">Total weight must equal 100%</span>
+							{/if}
+						</div>
 						{#each $form.judgingCriteria as criterion, index (index)}
 							<div class="mt-2 flex items-center gap-2">
 								<Input
@@ -222,12 +257,7 @@
 								{/if}
 							</div>
 						{/each}
-						<div class="mt-2 flex items-center justify-between">
-							<span>Total Weight: {getTotalWeight()}%</span>
-							{#if getTotalWeight() !== 100}
-								<span class="text-destructive">Total weight must equal 100%</span>
-							{/if}
-						</div>
+
 						{#if $form.judgingCriteria.length < 5}
 							<Button type="button" variant="outline" onclick={addCriterion} class="mt-2">
 								Add Criterion
