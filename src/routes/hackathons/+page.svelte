@@ -4,4 +4,4 @@
 	let { data }: { data: PageData } = $props();
 </script>
 
-<HackathonExplorer />
+<HackathonExplorer data={{ hacks: data.hackathons }} />
