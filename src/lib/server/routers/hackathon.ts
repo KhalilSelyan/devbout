@@ -12,7 +12,7 @@ const HackathonCreateSchema = z.object({
 	startDate: z.date(),
 	endDate: z.date(),
 	minTeamSize: z.number().int().min(1).optional().default(1),
-	maxTeamSize: z.number().int().min(2),
+	maxTeamSize: z.number().int().min(1),
 	prizePool: z.string().optional().default('0'),
 	basePrize: z.string().optional().default('0'),
 	fundingType: FundingTypeEnum,
