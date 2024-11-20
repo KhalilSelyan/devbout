@@ -22,7 +22,7 @@
 		"@types/eslint": "^9.6.0",
 		"@types/node": "^22.9.0",
 		"autoprefixer": "^10.4.20",
-		"bits-ui": "1.0.0-next.60",
+		"bits-ui": "1.0.0-next.62",
 		"clsx": "^2.1.1",
 		"drizzle-kit": "^0.22.0",
 		"eslint": "^9.7.0",
@@ -62,6 +62,7 @@
 		"better-auth": "0.8.7-beta.4",
 		"devalue": "^5.1.1",
 		"drizzle-orm": "^0.33.0",
+		"nanoid": "^5.0.8",
 		"postgres": "^3.4.4",
 		"trpc-svelte-query": "^2.1.0",
 		"trpc-sveltekit": "^3.6.2"

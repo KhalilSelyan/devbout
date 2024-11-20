@@ -41,6 +41,9 @@ importers:
       drizzle-orm:
         specifier: ^0.33.0
         version: 0.33.0(kysely@0.27.4)(postgres@3.4.4)
+      nanoid:
+        specifier: ^5.0.8
+        version: 5.0.8
       postgres:
         specifier: ^3.4.4
         version: 3.4.4
@@ -70,8 +73,8 @@ importers:
         specifier: ^10.4.20
         version: 10.4.20(postcss@8.4.49)
       bits-ui:
-        specifier: 1.0.0-next.60
-        version: 1.0.0-next.60(svelte@5.0.0)
+        specifier: 1.0.0-next.62
+        version: 1.0.0-next.62(svelte@5.0.0)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -1210,8 +1213,8 @@ packages:
     resolution: {integrity: sha512-Ceh+7ox5qe7LJuLHoY0feh3pHuUDHAcRUeyL2VYghZwfpkNIy/+8Ocg0a3UuSoYzavmylwuLWQOf3hl0jjMMIw==}
     engines: {node: '>=8'}
 
-  bits-ui@1.0.0-next.60:
-    resolution: {integrity: sha512-00S8OuhtVnZxbeIMZAf5Az1wmfWTsktkLw4HImLaL7gWaagPEfG9fc3tGp28jN45vGmKhYRvRTsBNdQ31ugSfw==}
+  bits-ui@1.0.0-next.62:
+    resolution: {integrity: sha512-Fv49QlBZOp6/ZfvDEXyQ0mA5LV1DZs5XySLFBjTr679ybpPw+VikRNF2N54SGoVkVBCvCR0kMBySLz3u2iKTXQ==}
     engines: {node: '>=18', pnpm: '>=8.7.0'}
     peerDependencies:
       svelte: ^5.0.0-next.1
@@ -3544,7 +3547,7 @@ snapshots:
 
   binary-extensions@2.3.0: {}
 
-  bits-ui@1.0.0-next.60(svelte@5.0.0):
+  bits-ui@1.0.0-next.62(svelte@5.0.0):
     dependencies:
       '@floating-ui/core': 1.6.8
       '@floating-ui/dom': 1.6.12
