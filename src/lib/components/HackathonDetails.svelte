@@ -57,7 +57,10 @@
 							<div class="flex items-center space-x-2">
 								<Calendar class="h-5 w-5 text-gray-500" />
 								<span>
-									{hackathon.startDate.toLocaleDateString()} - {hackathon.endDate.toLocaleDateString()}
+									{hackathon.startDate.toLocaleDateString('en-uk', { dateStyle: 'long' })} - {hackathon.endDate.toLocaleDateString(
+										'en-uk',
+										{ dateStyle: 'long' }
+									)}
 								</span>
 							</div>
 							<div class="flex items-center space-x-2">
