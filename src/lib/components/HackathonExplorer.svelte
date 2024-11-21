@@ -118,13 +118,13 @@
 			</div>
 		</CardContent>
 		<div class="flex justify-between border-t p-4">
-			<Button class=" border px-4 py-2">View Details</Button>
 			<Button
 				href={route('/hackathons/[id]', {
 					id: singlehackathon.id
 				})}
-				class="flex items-center px-4 py-2 "
+				class="border px-4 py-2">View Details</Button
 			>
+			<Button class="flex items-center px-4 py-2 ">
 				Join Hackathon
 				<ChevronRight class="ml-2 h-4 w-4" />
 			</Button>
