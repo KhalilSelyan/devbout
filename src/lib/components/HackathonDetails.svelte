@@ -11,137 +11,25 @@
 		CardTitle
 	} from '$lib/components/ui/card';
 	import { Tabs, TabsContent, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
+	import type { hackathonService } from '$lib/server/db/hackathonService';
 	import { Calendar, Clock, DollarSign, Github, LinkIcon, Trophy, Users } from 'lucide-svelte';
 
-	type Hackathon = {
-		id: string;
-		name: string;
-		description: string;
-		startDate: Date;
-		endDate: Date;
-		minTeamSize: number;
-		maxTeamSize: number;
-		prizePool: string;
-		basePrize: string;
-		fundingType: 'FULLY_FUNDED' | 'CROWDFUNDED' | 'HYBRID';
-		status: 'DRAFT' | 'PUBLISHED' | 'ONGOING' | 'COMPLETED';
-		judgingCriteria: Record<string, number>;
-		aiGeneratedTopics: string[];
-	};
+	type Hackathon = NonNullable<Awaited<ReturnType<typeof hackathonService.getHackathonDetails>>>;
 
-	type Contributor = {
-		id: string;
-		name: string;
-		avatar: string;
-		contribution: string;
-		badges: string[];
-	};
+	let { hackathon }: { hackathon: Hackathon } = $props();
 
-	type Team = {
-		id: string;
-		name: string;
-		members: string[];
-		xpPoints: number;
-	};
-
-	type Submission = {
-		id: string;
-		teamId: string;
-		projectName: string;
-		description: string;
-		submissionUrl?: string;
-		githubUrl?: string;
-		score?: string;
-		submittedAt: Date;
-	};
-
-	let mockHackathon: Hackathon = {
-		id: '1',
-		name: 'AI for Good Hackathon',
-		description:
-			'Develop AI solutions to address global challenges and make a positive impact on society.',
-		startDate: new Date('2024-06-01'),
-		endDate: new Date('2024-06-03'),
-		minTeamSize: 2,
-		maxTeamSize: 5,
-		prizePool: '10000',
-		basePrize: '5000',
-		fundingType: 'HYBRID',
-		status: 'ONGOING',
-		judgingCriteria: {
-			Innovation: 30,
-			Impact: 30,
-			Feasibility: 20,
-			Presentation: 20
-		},
-		aiGeneratedTopics: [
-			'AI-powered disaster response system',
-			'Sustainable agriculture optimization using machine learning',
-			'Accessible education platform with AI tutoring'
-		]
-	};
-
-	let mockContributors: Contributor[] = [
-		{
-			id: '1',
-			name: 'Alice Johnson',
-			avatar: '/favicon.png',
-			contribution: '2000',
-			badges: ['Early Backer', 'Top Contributor']
-		},
-		{
-			id: '2',
-			name: 'Bob Smith',
-			avatar: '/favicon.png',
-			contribution: '1500',
-			badges: ['Innovator']
-		},
-		{
-			id: '3',
-			name: 'Charlie Brown',
-			avatar: '/favicon.png',
-			contribution: '1000',
-			badges: ['Regular Supporter']
-		}
-	];
-
-	let mockTeams: Team[] = [
-		{ id: '1', name: 'Tech Wizards', members: ['Alice', 'Bob'], xpPoints: 500 },
-		{ id: '2', name: 'AI Innovators', members: ['Charlie', 'David', 'Eve'], xpPoints: 450 }
-	];
-
-	let mockSubmissions: Submission[] = [
-		{
-			id: '1',
-			teamId: '1',
-			projectName: 'EcoAI',
-			description: 'An AI-powered solution for optimizing waste management in cities.',
-			submissionUrl: 'https://example.com/ecoai',
-			githubUrl: 'https://github.com/techwizards/ecoai',
-			submittedAt: new Date('2024-06-03T10:00:00')
-		},
-		{
-			id: '2',
-			teamId: '2',
-			projectName: 'HealthBot',
-			description: 'An AI chatbot for providing mental health support and resources.',
-			submissionUrl: 'https://example.com/healthbot',
-			githubUrl: 'https://github.com/aiinnovators/healthbot',
-			submittedAt: new Date('2024-06-03T11:30:00')
-		}
-	];
 	let activeTab = $state('overview');
 </script>
 
 <div class="min-h-screen bg-gray-100">
 	<header class="bg-white shadow">
 		<div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-			<h1 class="text-3xl font-bold text-gray-900">{mockHackathon.name}</h1>
+			<h1 class="text-3xl font-bold text-gray-900">{hackathon.name}</h1>
 			<div class="mt-2 flex items-center space-x-2">
-				<Badge variant={mockHackathon.status === 'ONGOING' ? 'default' : 'secondary'}>
-					{mockHackathon.status}
+				<Badge variant={hackathon.status === 'ONGOING' ? 'default' : 'secondary'}>
+					{hackathon.status}
 				</Badge>
-				<Badge variant="outline">{mockHackathon.fundingType}</Badge>
+				<Badge variant="outline">{hackathon.fundingType}</Badge>
 			</div>
 		</div>
 	</header>
@@ -162,40 +50,40 @@
 				<Card>
 					<CardHeader>
 						<CardTitle>Hackathon Details</CardTitle>
-						<CardDescription>{mockHackathon.description}</CardDescription>
+						<CardDescription>{hackathon.description}</CardDescription>
 					</CardHeader>
 					<CardContent class="space-y-4">
 						<div class="flex items-center justify-between">
 							<div class="flex items-center space-x-2">
 								<Calendar class="h-5 w-5 text-gray-500" />
 								<span>
-									{mockHackathon.startDate.toLocaleDateString()} - {mockHackathon.endDate.toLocaleDateString()}
+									{hackathon.startDate.toLocaleDateString()} - {hackathon.endDate.toLocaleDateString()}
 								</span>
 							</div>
 							<div class="flex items-center space-x-2">
 								<Users class="h-5 w-5 text-gray-500" />
-								<span>Team Size: {mockHackathon.minTeamSize} - {mockHackathon.maxTeamSize}</span>
+								<span>Team Size: {hackathon.minTeamSize} - {hackathon.maxTeamSize}</span>
 							</div>
 						</div>
 						<div>
 							<h3 class="mb-2 text-lg font-semibold">Prize Pool</h3>
 							<div class="flex items-center space-x-2">
 								<DollarSign class="h-5 w-5 text-green-500" />
-								<span class="text-2xl font-bold"
-									>${parseInt(mockHackathon.prizePool).toLocaleString()}</span
+								<span class="text-2xl font-bold">
+									{parseInt(hackathon.prizePool ?? '0').toLocaleString()}</span
 								>
 							</div>
 							<p class="mt-1 text-sm text-gray-500">
-								Base Prize: ${parseInt(mockHackathon.basePrize).toLocaleString()}
+								Base Prize: ${parseInt(hackathon.basePrize ?? '0').toLocaleString()}
 							</p>
 						</div>
 						<div>
 							<h3 class="mb-2 text-lg font-semibold">Judging Criteria</h3>
 							<ul class="space-y-2">
-								{#each Object.entries(mockHackathon.judgingCriteria) as [criterion, weight]}
+								{#each hackathon.judgingCriteria ?? [] as criterion}
 									<li class="flex items-center justify-between">
-										<span>{criterion}</span>
-										<span class="font-semibold">{weight}%</span>
+										<span>{criterion.name}</span>
+										<span class="font-semibold">{criterion.weight}%</span>
 									</li>
 								{/each}
 							</ul>
@@ -203,7 +91,7 @@
 						<div>
 							<h3 class="mb-2 text-lg font-semibold">AI-Generated Topics</h3>
 							<ul class="list-inside list-disc space-y-1">
-								{#each mockHackathon.aiGeneratedTopics as topic}
+								{#each hackathon.aiGeneratedTopics ?? [] as topic}
 									<li>{topic}</li>
 								{/each}
 							</ul>
@@ -224,17 +112,20 @@
 					</CardHeader>
 					<CardContent>
 						<ul class="space-y-4">
-							{#each mockContributors as contributor}
+							{#each hackathon.prizeContributions as contributor}
 								<li class="flex items-center justify-between">
 									<div class="flex items-center space-x-3">
 										<Avatar>
-											<AvatarImage src={contributor.avatar} alt={contributor.name} />
-											<AvatarFallback>{contributor.name.charAt(0)}</AvatarFallback>
+											<AvatarImage
+												src={contributor.contributor.image}
+												alt={contributor.contributor.name}
+											/>
+											<AvatarFallback>{contributor.contributor.name.charAt(0)}</AvatarFallback>
 										</Avatar>
 										<div>
-											<p class="font-semibold">{contributor.name}</p>
+											<p class="font-semibold">{contributor.userId}</p>
 											<div class="flex space-x-1">
-												{#each contributor.badges as badge, index}
+												{#each contributor.contributor.badges as badge, index}
 													<Badge variant="secondary">
 														{badge}
 													</Badge>
@@ -243,7 +134,7 @@
 										</div>
 									</div>
 									<span class="font-bold">
-										${parseInt(contributor.contribution).toLocaleString()}
+										${parseInt(contributor.amount).toLocaleString()}
 									</span>
 								</li>
 							{/each}
@@ -262,7 +153,7 @@
 					</CardHeader>
 					<CardContent>
 						<ul class="space-y-4">
-							{#each mockTeams as team}
+							{#each hackathon.teams as team}
 								<li class="rounded-lg border p-4">
 									<div class="mb-2 flex items-center justify-between">
 										<h3 class="text-lg font-semibold">{team.name}</h3>
@@ -290,7 +181,7 @@
 					</CardHeader>
 					<CardContent>
 						<ul class="space-y-6">
-							{#each mockSubmissions as submission}
+							{#each hackathon.submissions as submission}
 								<li class="rounded-lg border p-4">
 									<div class="mb-2 flex items-start justify-between">
 										<h3 class="text-lg font-semibold">{submission.projectName}</h3>

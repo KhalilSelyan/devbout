@@ -1,5 +1,7 @@
 <script lang="ts">
 	import HackathonDetails from '$lib/components/HackathonDetails.svelte';
+
+	let { data } = $props();
 </script>
 
-<HackathonDetails />
+<HackathonDetails hackathon={data.hackathon} />
