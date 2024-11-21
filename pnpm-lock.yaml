@@ -47,6 +47,9 @@ importers:
       postgres:
         specifier: ^3.4.4
         version: 3.4.4
+      tailwindcss-motion:
+        specifier: 0.4.3-beta
+        version: 0.4.3-beta(tailwindcss@3.4.9)
       trpc-svelte-query:
         specifier: ^2.1.0
         version: 2.1.0(@sveltejs/kit@2.0.0(@sveltejs/vite-plugin-svelte@4.0.0(svelte@5.0.0)(vite@5.0.3(@types/node@22.9.0)))(svelte@5.0.0)(vite@5.0.3(@types/node@22.9.0)))(@tanstack/svelte-query@5.60.6(svelte@5.0.0))(@trpc/client@10.45.2(@trpc/server@10.45.2))(@trpc/server@10.45.2)(svelte@5.0.0)
@@ -2364,6 +2367,11 @@ packages:
     peerDependencies:
       tailwindcss: '>=3.0.0 || insiders'
 
+  tailwindcss-motion@0.4.3-beta:
+    resolution: {integrity: sha512-9S4nmSw01m0/z0UxodUNT7U+yUdlZdXnH9RMkb2rXvrUEQQ+rMVPeP9j4pMwJy779LECiSr+IoSTVrGluSfU2w==}
+    peerDependencies:
+      tailwindcss: '>=3.0.0 || insiders'
+
   tailwindcss@3.4.9:
     resolution: {integrity: sha512-1SEOvRr6sSdV5IDf9iC+NU4dhwdqzF4zKKq3sAbasUWHEM6lsMhX+eNN5gkPx1BvLFEnZQEUFbXnGj8Qlp83Pg==}
     engines: {node: '>=14.0.0'}
@@ -4620,6 +4628,10 @@ snapshots:
       tailwindcss: 3.4.9
 
   tailwindcss-animate@1.0.7(tailwindcss@3.4.9):
+    dependencies:
+      tailwindcss: 3.4.9
+
+  tailwindcss-motion@0.4.3-beta(tailwindcss@3.4.9):
     dependencies:
       tailwindcss: 3.4.9
 

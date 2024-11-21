@@ -64,7 +64,7 @@
 		class="absolute left-1/2 top-0 -z-10 size-[600px] -translate-x-1/2 rounded-full bg-emerald-500 opacity-20 blur-3xl"
 	></div>
 	<div class="container relative z-10 mx-auto px-4 py-16 text-center">
-		<h2 class="mb-6 text-4xl font-bold tracking-tight sm:text-6xl">
+		<h2 class="focusin mb-6 text-4xl font-bold tracking-tight sm:text-6xl">
 			Sprint Towards Innovation with Global Hackathons
 		</h2>
 
@@ -84,8 +84,8 @@
 
 	<div class="container mx-auto px-4 py-16">
 		<div class="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-			{#each features as feature}
-				<div class="rounded-lg bg-white p-6 text-center shadow-md">
+			{#each features as feature (feature.title)}
+				<div class="rounded-lg bg-white p-6 text-center shadow-md motion-rotate-in-[0.5turn]">
 					<div class="mb-4 flex justify-center">
 						<feature.icon class="h-10 w-10 text-primary" />
 					</div>
