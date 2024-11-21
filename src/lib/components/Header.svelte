@@ -14,7 +14,7 @@
 <header class="container mx-auto flex items-center justify-between py-6">
 	<a href={route('/')} class="text-2xl font-bold">DevBout</a>
 	<nav class="flex items-center gap-2">
-		<Button variant="ghost">About</Button>
+		<Button href={route('/about')} variant="ghost">About</Button>
 		<Button href={route('/hackathons')} variant="ghost">Hackathons</Button>
 		<Button variant="ghost">Leaderboard</Button>
 
