@@ -58,7 +58,13 @@ export const hackathonService = {
 					}
 				},
 				submissions: true,
-				prizeContributions: true
+				prizeContributions: {
+					with: {
+						contributor: {
+							with: { badges: true }
+						}
+					}
+				}
 			}
 		});
 
