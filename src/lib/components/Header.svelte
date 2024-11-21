@@ -23,7 +23,7 @@
 				<Popover.Trigger>
 					<Avatar>
 						<AvatarImage src={`${user.image}`} alt="@ks" />
-						<AvatarFallback>{user.name}</AvatarFallback>
+						<AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
 					</Avatar>
 				</Popover.Trigger>
 				<Popover.Content align="end" class={cn('rounded-md bg-white p-4 shadow-md')}>
