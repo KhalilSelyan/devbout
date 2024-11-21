@@ -15,7 +15,7 @@
 
 <div>
 	<QueryClientProvider client={queryClient}>
-		<Header session={data.session} user={data.user} />
+		<Header user={data.user} />
 		{@render children()}
 		<Footer />
 	</QueryClientProvider>
