@@ -18,18 +18,17 @@
 	let searchTerm = $state('');
 	let statusFilter = $state<'DRAFT' | 'OPEN' | 'ONGOING' | 'COMPLETED' | 'ALL'>('ALL');
 
-	// Mock hackathon data
-	let mockHackathons: Array<typeof hackathon.$inferSelect> = $state(data.hacks);
+	let hackathons: Array<typeof hackathon.$inferSelect> = $state(data.hacks);
 
 	// Filtered hackathons based on search and status
-	let filteredHackathons = $state([...mockHackathons]);
+	let filteredHackathons = $state([...hackathons]);
 
 	// Update filtered hackathons whenever searchTerm or statusFilter changes
 	function updateFilters() {
 		let term = searchTerm.toLowerCase();
 		let status = statusFilter;
 
-		filteredHackathons = mockHackathons.filter(
+		filteredHackathons = hackathons.filter(
 			(hackathon) =>
 				hackathon.name.toLowerCase().includes(term) &&
 				(status === 'ALL' || hackathon.status === status)
