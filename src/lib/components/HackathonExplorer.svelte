@@ -6,29 +6,38 @@
 	import { Card, CardContent, CardHeader } from './ui/card';
 	import { route } from '$lib/ROUTES';
 	import type { hackathon } from '$lib/server/db/schema';
+	import CreateHackathon from './CreateHackathon.svelte';
+	import type { hackathonSchema } from '$lib/zodValidations/hackathonSchema';
+	import type { Infer, SuperValidated } from 'sveltekit-superforms';
+	import { trpc } from '$lib/trpc';
+	import type { trpcServer } from '$lib/server/server';
+	import type { inferAsyncReturnType } from '@trpc/server';
 
 	let {
 		data
 	}: {
 		data: {
-			hacks: Array<typeof hackathon.$inferSelect>;
+			hacks: inferAsyncReturnType<typeof trpcServer.hackathon.getHackathons.ssr>;
+			form: SuperValidated<Infer<typeof hackathonSchema>>;
 		};
 	} = $props();
 
 	let searchTerm = $state('');
 	let statusFilter = $state<'DRAFT' | 'OPEN' | 'ONGOING' | 'COMPLETED' | 'ALL'>('ALL');
 
-	let hackathons: Array<typeof hackathon.$inferSelect> = $state(data.hacks);
+	let hacks = trpc.hackathon.getHackathons.query(undefined, {
+		initialData: data.hacks,
+		queryHash: 'hackathon'
+	});
 
 	// Filtered hackathons based on search and status
-	let filteredHackathons = $state([...hackathons]);
-
+	let filteredHackathons = $state($hacks.data ?? []);
 	// Update filtered hackathons whenever searchTerm or statusFilter changes
 	function updateFilters() {
 		let term = searchTerm.toLowerCase();
 		let status = statusFilter;
 
-		filteredHackathons = hackathons.filter(
+		filteredHackathons = ($hacks.data ?? []).filter(
 			(hackathon) =>
 				hackathon.name.toLowerCase().includes(term) &&
 				(status === 'ALL' || hackathon.status === status)
@@ -41,11 +50,6 @@
 </script>
 
 <div class="min-h-screen bg-gray-100">
-	<header class="bg-white shadow">
-		<div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-			<h1 class="text-3xl font-bold text-gray-900">Explore Hackathons</h1>
-		</div>
-	</header>
 	<main class="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
 		<div class="mb-6 flex flex-col items-center justify-between gap-4 md:flex-row">
 			<!-- Search Input -->
@@ -69,6 +73,8 @@
 					</Select.Group>
 				</Select.Content>
 			</Select.Root>
+
+			<CreateHackathon data={data.form} />
 		</div>
 
 		<!-- Hackathon Grid -->

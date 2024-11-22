@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import HackathonExplorer from '$lib/components/HackathonExplorer.svelte';
+
 	let { data }: { data: PageData } = $props();
 </script>
 
-<HackathonExplorer data={{ hacks: data.hackathons }} />
+<HackathonExplorer data={{ hacks: data.hackathons, form: data.form }} />

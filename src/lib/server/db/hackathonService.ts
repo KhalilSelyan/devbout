@@ -106,7 +106,7 @@ export const hackathonService = {
 				count: sql<number>`COUNT(*)`.as('count')
 			})
 			.from(hackathon)
-			.where(or(eq(hackathon.status, 'ONGOING'), eq(hackathon.status, 'PUBLISHED')))
+			.where(or(eq(hackathon.status, 'ONGOING'), eq(hackathon.status, 'OPEN')))
 			.groupBy(hackathon.status);
 
 		return counts;

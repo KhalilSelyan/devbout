@@ -13,7 +13,7 @@ import {
 export const fundingTypeEnum = pgEnum('funding_type', ['FULLY_FUNDED', 'CROWDFUNDED', 'HYBRID']);
 export const hackathonStatusEnum = pgEnum('hackathon_status', [
 	'DRAFT',
-	'PUBLISHED',
+	'OPEN',
 	'ONGOING',
 	'COMPLETED'
 ]);

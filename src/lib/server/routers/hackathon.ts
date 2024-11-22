@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { hackathonService } from '$lib/server/db/hackathonService';
 
 // Zod schemas for validation
-const HackathonStatusEnum = z.enum(['DRAFT', 'PUBLISHED', 'ONGOING', 'COMPLETED']);
+const HackathonStatusEnum = z.enum(['DRAFT', 'OPEN', 'ONGOING', 'COMPLETED']);
 const FundingTypeEnum = z.enum(['FULLY_FUNDED', 'CROWDFUNDED', 'HYBRID']);
 
 const HackathonCreateSchema = z.object({
@@ -17,7 +17,7 @@ const HackathonCreateSchema = z.object({
 	basePrize: z.string().optional().default('0'),
 	fundingType: FundingTypeEnum,
 	status: HackathonStatusEnum.optional().default('DRAFT'),
-	judgingCriteria: z.record(z.string(), z.number()).optional(),
+	judgingCriteria: z.array(z.object({ name: z.string(), weight: z.number() })).optional(),
 	aiGeneratedTopics: z.array(z.string()).optional()
 });
 

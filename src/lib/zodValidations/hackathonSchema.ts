@@ -17,6 +17,9 @@ export const hackathonSchema = z
 		// .refine((max) => Number(max) >= 1, {
 		// 	message: 'Maximum team size must be greater than or equal to minimum team size'
 		// }),
+		status: z.enum(['DRAFT', 'OPEN', 'ONGOING', 'COMPLETED'], {
+			errorMap: () => ({ message: 'Invalid status type selected' })
+		}),
 		basePrize: z
 			.string()
 			.refine((val) => /^\d+$/.test(val), { message: 'Base prize must be a positive number' }),
