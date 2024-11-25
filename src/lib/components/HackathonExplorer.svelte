@@ -127,11 +127,9 @@
 				href={route('/hackathons/[id]', {
 					id: singlehackathon.id
 				})}
-				class="border px-4 py-2">View Details</Button
+				class="w-full border px-4 py-2"
 			>
-			<Button class="flex items-center px-4 py-2 ">
-				Join Hackathon
-				<ChevronRight class="ml-2 h-4 w-4" />
+				View Details/Join Hackathon
 			</Button>
 		</div>
 	</Card>
