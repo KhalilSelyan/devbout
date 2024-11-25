@@ -18,9 +18,12 @@ export const appKit = createAppKit({
 	adapters: [new Ethers5Adapter()],
 	networks: [sepolia],
 	metadata,
+	enableCoinbase: true,
+	enableInjected: true,
 	defaultNetwork: sepolia,
 	projectId,
 	features: {
+		onramp: false,
 		socials: false,
 		email: false,
 		analytics: false // Optional - defaults to your Cloud configuration
