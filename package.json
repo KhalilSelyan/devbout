@@ -52,6 +52,8 @@
 		"zod": "^3.23.8"
 	},
 	"dependencies": {
+		"@reown/appkit": "^1.5.1",
+		"@reown/appkit-adapter-ethers5": "^1.5.1",
 		"@sveltejs/adapter-node": "^5.2.9",
 		"@tailwindcss/aspect-ratio": "^0.4.2",
 		"@tailwindcss/container-queries": "^0.1.1",
@@ -63,6 +65,7 @@
 		"better-auth": "0.8.7-beta.4",
 		"devalue": "^5.1.1",
 		"drizzle-orm": "^0.33.0",
+		"ethers": "5.7.2",
 		"nanoid": "^5.0.8",
 		"postgres": "^3.4.4",
 		"tailwindcss-motion": "0.4.3-beta",

@@ -1,5 +1,11 @@
 import { db } from './index';
-import { hackathon, type hackathonStatusEnum, type fundingTypeEnum } from './schema';
+import {
+	hackathon,
+	type hackathonStatusEnum,
+	type fundingTypeEnum,
+	teamMember,
+	team
+} from './schema';
 import { eq, sql, and, or } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 
@@ -119,5 +125,36 @@ export const hackathonService = {
 			.from(hackathon)
 			.where(sql`jsonb_array_length(${hackathon.aiGeneratedTopics}) > 0`)
 			.orderBy(hackathon.createdAt);
+	},
+
+	async getUserHackathons(userId: string) {
+		return await db.query.hackathon.findMany({
+			with: {
+				teams: {
+					where: (teams, { exists }) =>
+						exists(
+							db
+								.select()
+								.from(teamMember)
+								.where(and(eq(teamMember.userId, userId), eq(teamMember.teamId, teams.id)))
+						),
+					with: {
+						members: {
+							with: {
+								user: true
+							}
+						}
+					}
+				}
+			},
+			where: (hackathons, { exists }) =>
+				exists(
+					db
+						.select()
+						.from(teamMember)
+						.innerJoin(team, eq(team.id, teamMember.teamId))
+						.where(and(eq(teamMember.userId, userId), eq(team.hackathonId, hackathons.id)))
+				)
+		});
 	}
 };

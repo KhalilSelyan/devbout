@@ -1,5 +1,7 @@
 <script lang="ts">
 	import UserProfile from '$lib/components/UserProfile.svelte';
+
+	let { data } = $props();
 </script>
 
-<UserProfile />
+<UserProfile user={data.user} form={data.form} userProfileData={data.userProfileData} />

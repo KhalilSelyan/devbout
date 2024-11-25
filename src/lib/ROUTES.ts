@@ -34,7 +34,14 @@ const SERVERS = {
  * ACTIONS
  */
 const ACTIONS = {
-  "default /hackathons": `/hackathons`
+  "default /hackathons": `/hackathons`,
+  "createTeam /hackathons/[id]": (params: { id: (string | number) }) => {
+    return `/hackathons/${params.id}?/createTeam`
+  },
+  "joinTeam /hackathons/[id]": (params: { id: (string | number) }) => {
+    return `/hackathons/${params.id}?/joinTeam`
+  },
+  "default /profile": `/profile`
 }
 
 /**
@@ -143,7 +150,7 @@ export function route<T extends keyof AllTypes>(key: T, ...params: any[]): strin
 export type KIT_ROUTES = {
   PAGES: { '/': never, '/about': never, '/hackathons': never, '/hackathons/[id]': 'id', '/profile': never }
   SERVERS: { 'GET /api/trpc/[...trpc]': 'trpc', 'POST /api/trpc/[...trpc]': 'trpc' }
-  ACTIONS: { 'default /hackathons': never }
+  ACTIONS: { 'default /hackathons': never, 'createTeam /hackathons/[id]': 'id', 'joinTeam /hackathons/[id]': 'id', 'default /profile': never }
   LINKS: Record<string, never>
   Params: { id: never, trpc: never }
 }

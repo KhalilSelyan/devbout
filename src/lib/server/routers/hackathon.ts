@@ -1,6 +1,7 @@
 import { router, publicProcedure, authedProcedure } from '$lib/server/trpc';
 import { z } from 'zod';
 import { hackathonService } from '$lib/server/db/hackathonService';
+import { TRPCError } from '@trpc/server';
 
 // Zod schemas for validation
 const HackathonStatusEnum = z.enum(['DRAFT', 'OPEN', 'ONGOING', 'COMPLETED']);
@@ -97,6 +98,20 @@ export const hackathonRouter = router({
 	// Get hackathons with AI-generated topics
 	getHackathonsWithAITopics: publicProcedure.query(async () => {
 		return await hackathonService.getHackathonsWithAITopics();
+	}),
+
+	// Get user's hackathons with their teams
+	getUserHackathons: authedProcedure.input(z.string()).query(async ({ input }) => {
+		try {
+			const hackathons = await hackathonService.getUserHackathons(input);
+			return hackathons;
+		} catch (error) {
+			throw new TRPCError({
+				code: 'INTERNAL_SERVER_ERROR',
+				message: 'Failed to fetch user hackathons',
+				cause: error
+			});
+		}
 	})
 });
 

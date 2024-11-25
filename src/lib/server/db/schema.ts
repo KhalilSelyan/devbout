@@ -18,6 +18,11 @@ export const hackathonStatusEnum = pgEnum('hackathon_status', [
 	'COMPLETED'
 ]);
 export const teamMemberRoleEnum = pgEnum('team_member_role', ['LEADER', 'MEMBER']);
+export const teamJoinRequestStatusEnum = pgEnum('team_join_request_status', [
+	'PENDING',
+	'ACCEPTED',
+	'REJECTED'
+]);
 
 export const user = pgTable(
 	'user',
@@ -33,7 +38,9 @@ export const user = pgTable(
 		walletAddress: text('walletAddress'),
 		bio: text('bio'),
 		skills: json('skills').$type<Record<string, string>>(),
-		xpPoints: integer('xpPoints').default(0)
+		xpPoints: integer('xpPoints').default(0),
+		githubUsername: text('githubUsername'),
+		discord: text('discord')
 	},
 	(table) => ({
 		emailIdx: index('email_idx').on(table.email)
@@ -140,7 +147,6 @@ export const team = pgTable('team', {
 		.references(() => hackathon.id),
 	name: text('name').notNull(),
 	description: text('description'),
-	xpPoints: integer('xpPoints').default(0),
 	createdAt: timestamp('createdAt').notNull().defaultNow()
 });
 
@@ -150,7 +156,8 @@ export const teamRelations = relations(team, ({ one, many }) => ({
 		references: [hackathon.id]
 	}),
 	members: many(teamMember),
-	submissions: many(submission)
+	submissions: many(submission),
+	joinRequests: many(teamJoinRequest)
 }));
 
 export const teamMember = pgTable('teamMember', {
@@ -263,5 +270,30 @@ export const userBadgeRelations = relations(userBadge, ({ one }) => ({
 	badge: one(badge, {
 		fields: [userBadge.badgeId],
 		references: [badge.id]
+	})
+}));
+
+export const teamJoinRequest = pgTable('teamJoinRequest', {
+	id: text('id').primaryKey(),
+	teamId: text('teamId')
+		.notNull()
+		.references(() => team.id),
+	userId: text('userId')
+		.notNull()
+		.references(() => user.id),
+	status: teamJoinRequestStatusEnum('status').notNull().default('PENDING'),
+	message: text('message'),
+	createdAt: timestamp('createdAt').notNull().defaultNow(),
+	updatedAt: timestamp('updatedAt').notNull().defaultNow()
+});
+
+export const teamJoinRequestRelations = relations(teamJoinRequest, ({ one }) => ({
+	team: one(team, {
+		fields: [teamJoinRequest.teamId],
+		references: [team.id]
+	}),
+	user: one(user, {
+		fields: [teamJoinRequest.userId],
+		references: [user.id]
 	})
 }));
