@@ -23,7 +23,7 @@
 	} = $props();
 
 	let searchTerm = $state('');
-	let statusFilter = $state<'DRAFT' | 'OPEN' | 'ONGOING' | 'COMPLETED' | 'ALL'>('ALL');
+	let statusFilter = $state<'OPEN' | 'ONGOING' | 'COMPLETED' | 'ALL'>('ALL');
 
 	let hacks = trpc.hackathon.getHackathons.query(undefined, {
 		initialData: data.hacks,
