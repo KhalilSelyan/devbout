@@ -8,11 +8,15 @@ import { superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import { fail } from '@sveltejs/kit';
 
-export const load = (async ({ params }) => {
+export const load = (async ({ params, locals }) => {
 	const hackathonDetails = await hackathonService.getHackathonDetails(params.id);
 	const teams = await teamService.getHackathonTeams(params.id);
 
-	if (!hackathonDetails) redirect(307, route('/hackathons'));
+	if (
+		!hackathonDetails ||
+		(hackathonDetails.status === 'DRAFT' && hackathonDetails.organizerId !== locals.user?.id)
+	)
+		redirect(307, route('/hackathons'));
 	// Create forms with initial data
 	const createTeamForm = await superValidate(zod(teamSchema));
 	const joinRequestForm = await superValidate(zod(teamJoinRequestSchema));
