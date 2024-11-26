@@ -11,6 +11,7 @@
 	} from '$lib/components/ui/card';
 	import { Clock, Github, LinkIcon } from 'lucide-svelte';
 	import type { hackathonService } from '$lib/server/db/hackathonService';
+	import SubmissionDialog from './SubmissionDialog.svelte';
 
 	type Hackathon = Awaited<ReturnType<typeof hackathonService.getHackathonDetails>>;
 
@@ -65,7 +66,7 @@
 			</ul>
 		</CardContent>
 		<CardFooter>
-			<Button class="w-full">Submit Your Project</Button>
+			<SubmissionDialog hackathonId={hackathon.id} />
 		</CardFooter>
 	</Card>
 {/if}
