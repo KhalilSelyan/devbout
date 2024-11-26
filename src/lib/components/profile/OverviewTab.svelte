@@ -2,9 +2,6 @@
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import type { trpcServer } from '$lib/server/server';
 	import { trpc } from '$lib/trpc';
-	import { createAppKit } from '@reown/appkit';
-	import { Ethers5Adapter } from '@reown/appkit-adapter-ethers5';
-	import { sepolia } from '@reown/appkit/networks';
 	import type { inferAsyncReturnType } from '@trpc/server';
 	import { Github, Star, Wallet } from 'lucide-svelte';
 	import { Badge } from '../ui/badge';
