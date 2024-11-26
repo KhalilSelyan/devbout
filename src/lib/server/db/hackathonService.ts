@@ -6,7 +6,7 @@ import {
 	teamMember,
 	team
 } from './schema';
-import { eq, sql, and, or } from 'drizzle-orm';
+import { eq, sql, and, or, not } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 
 type HackathonCreateInput = Omit<typeof hackathon.$inferInsert, 'id'>;
@@ -33,9 +33,18 @@ export const hackathonService = {
 			fundingType?: (typeof fundingTypeEnum.enumValues)[number];
 			minPrizePool?: string;
 			organizerId?: string;
-		} = {}
+		} = {},
+		requestingUserId?: string
 	) {
 		const whereConditions = and(
+			// Handle DRAFT status visibility
+			or(
+				// Show non-DRAFT hackathons
+				not(eq(hackathon.status, 'DRAFT')),
+				// Show DRAFT hackathons only if they belong to the requesting user
+				and(eq(hackathon.status, 'DRAFT'), eq(hackathon.organizerId, requestingUserId ?? ''))
+			),
+			// Apply other filters
 			filters.status ? eq(hackathon.status, filters.status) : undefined,
 			filters.fundingType ? eq(hackathon.fundingType, filters.fundingType) : undefined,
 			filters.organizerId ? eq(hackathon.organizerId, filters.organizerId) : undefined,

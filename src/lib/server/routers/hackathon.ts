@@ -4,7 +4,7 @@ import { hackathonService } from '$lib/server/db/hackathonService';
 import { TRPCError } from '@trpc/server';
 
 // Zod schemas for validation
-const HackathonStatusEnum = z.enum(['DRAFT', 'OPEN', 'ONGOING', 'COMPLETED']);
+const HackathonStatusEnum = z.enum(['DRAFT', 'OPEN', 'ONGOING', 'JUDGING', 'COMPLETED']);
 const FundingTypeEnum = z.enum(['FULLY_FUNDED', 'CROWDFUNDED', 'HYBRID']);
 
 const HackathonCreateSchema = z.object({
@@ -33,8 +33,8 @@ export const hackathonRouter = router({
 	// Get all hackathons with optional filtering
 	getHackathons: publicProcedure
 		.input(HackathonFilterSchema.optional())
-		.query(async ({ input }) => {
-			return await hackathonService.getHackathons(input);
+		.query(async ({ input, ctx }) => {
+			return await hackathonService.getHackathons(input, ctx.user?.id);
 		}),
 
 	// Get detailed hackathon information
