@@ -23,20 +23,20 @@
 
 	let currentTab = $state('overview');
 
-	const setCurrentTab = (tab: 'overview' | 'teams' | 'submissions' | 'contributors') => {
-		currentTab = tab;
+	const setCurrentTab = (tab: string) => {
+		if (['overview', 'teams', 'submissions', 'contributors'].includes(tab)) currentTab = tab;
 	};
 </script>
 
 <div class="min-h-screen bg-gray-100">
 	<header class="bg-white shadow">
 		<div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-			<h1 class="text-3xl font-bold text-gray-900">{$hackathonQuery.data.name}</h1>
+			<h1 class="text-3xl font-bold text-gray-900">{$hackathonQuery.data?.name}</h1>
 			<div class="mt-2 flex items-center space-x-2">
-				<Badge variant={$hackathonQuery.data.status === 'ONGOING' ? 'default' : 'secondary'}>
-					{$hackathonQuery.data.status}
+				<Badge variant={$hackathonQuery.data?.status === 'ONGOING' ? 'default' : 'secondary'}>
+					{$hackathonQuery.data?.status}
 				</Badge>
-				<Badge variant="outline">{$hackathonQuery.data.fundingType}</Badge>
+				<Badge variant="outline">{$hackathonQuery.data?.fundingType}</Badge>
 			</div>
 		</div>
 	</header>
