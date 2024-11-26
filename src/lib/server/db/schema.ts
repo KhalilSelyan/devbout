@@ -15,6 +15,7 @@ export const hackathonStatusEnum = pgEnum('hackathon_status', [
 	'DRAFT',
 	'OPEN',
 	'ONGOING',
+	'JUDGING',
 	'COMPLETED'
 ]);
 export const teamMemberRoleEnum = pgEnum('team_member_role', ['LEADER', 'MEMBER']);
@@ -118,6 +119,8 @@ export const hackathon = pgTable(
 		maxTeamSize: integer('maxTeamSize').notNull(),
 		prizePool: text('prizePool').default('0'),
 		basePrize: text('basePrize').default('0'),
+		contractAddress: text('contractAddress'), // store the deployed contract address
+		chainId: text('chainId'), // track which network it's on
 		fundingType: fundingTypeEnum('fundingType').notNull(),
 		status: hackathonStatusEnum('status').notNull().default('DRAFT'),
 		judgingCriteria: json('judgingCriteria').$type<{ name: string; weight: number }[]>(),
@@ -147,6 +150,8 @@ export const team = pgTable('team', {
 		.references(() => hackathon.id),
 	name: text('name').notNull(),
 	description: text('description'),
+	isWinner: boolean('isWinner').default(false),
+	rank: integer('rank'),
 	createdAt: timestamp('createdAt').notNull().defaultNow()
 });
 
@@ -157,7 +162,8 @@ export const teamRelations = relations(team, ({ one, many }) => ({
 	}),
 	members: many(teamMember),
 	submissions: many(submission),
-	joinRequests: many(teamJoinRequest)
+	joinRequests: many(teamJoinRequest),
+	prize: many(teamPrize)
 }));
 
 export const teamMember = pgTable('teamMember', {
@@ -294,6 +300,56 @@ export const teamJoinRequestRelations = relations(teamJoinRequest, ({ one }) => 
 	}),
 	user: one(user, {
 		fields: [teamJoinRequest.userId],
+		references: [user.id]
+	})
+}));
+
+export const teamPrize = pgTable('teamPrize', {
+	id: text('id').primaryKey(),
+	hackathonId: text('hackathonId')
+		.notNull()
+		.references(() => hackathon.id),
+	teamId: text('teamId')
+		.notNull()
+		.references(() => team.id),
+	amount: text('amount').notNull(), // Prize amount for this team
+	hasClaimed: boolean('hasClaimed').notNull().default(false),
+	claimedAt: timestamp('claimedAt'),
+	transactionHash: text('transactionHash'), // Transaction hash of the claim
+	createdAt: timestamp('createdAt').notNull().defaultNow()
+});
+
+export const teamPrizeRelations = relations(teamPrize, ({ one }) => ({
+	hackathon: one(hackathon, {
+		fields: [teamPrize.hackathonId],
+		references: [hackathon.id]
+	}),
+	team: one(team, {
+		fields: [teamPrize.teamId],
+		references: [team.id]
+	})
+}));
+
+export const prizeClaim = pgTable('prizeClaim', {
+	id: text('id').primaryKey(),
+	teamPrizeId: text('teamPrizeId')
+		.notNull()
+		.references(() => teamPrize.id),
+	userId: text('userId')
+		.notNull()
+		.references(() => user.id),
+	amount: text('amount').notNull(),
+	transactionHash: text('transactionHash'),
+	claimedAt: timestamp('claimedAt').notNull().defaultNow()
+});
+
+export const prizeClaimRelations = relations(prizeClaim, ({ one }) => ({
+	teamPrize: one(teamPrize, {
+		fields: [prizeClaim.teamPrizeId],
+		references: [teamPrize.id]
+	}),
+	user: one(user, {
+		fields: [prizeClaim.userId],
 		references: [user.id]
 	})
 }));
