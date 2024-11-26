@@ -67,7 +67,7 @@
 				<Select.Content>
 					<Select.Group>
 						<Select.GroupHeading>Status</Select.GroupHeading>
-						{#each ['ALL', 'DRAFT', 'OPEN', 'ONGOING', 'COMPLETED'] as status}
+						{#each ['ALL', 'OPEN', 'ONGOING', 'COMPLETED'] as status}
 							<Select.Item value={status} label={status}>{status}</Select.Item>
 						{/each}
 					</Select.Group>
