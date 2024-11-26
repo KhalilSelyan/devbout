@@ -12,6 +12,7 @@
 	import { zod } from 'sveltekit-superforms/adapters';
 	import { Label } from './ui/label';
 	import { route } from '$lib/ROUTES';
+
 	type Teams = NonNullable<Awaited<ReturnType<typeof teamService.getHackathonTeams>>>;
 
 	let { hackathonId, teams }: { hackathonId: string; teams: Teams } = $props();
@@ -63,6 +64,10 @@
 	);
 
 	const { form: joinForm, enhance: joinEnhance, errors: joinErrors } = joinRequestForm;
+
+	function selectTeam(teamId: string) {
+		$joinForm.teamId = teamId; // Update the form state here
+	}
 </script>
 
 <Dialog.Root
@@ -162,9 +167,7 @@
 									<Button
 										type="button"
 										class="mt-2"
-										onclick={() => {
-											$joinForm.teamId = team.id;
-										}}
+										onclick={() => selectTeam(team.id)}
 										variant={$joinForm.teamId === team.id ? 'default' : 'outline'}
 										>Select Team</Button
 									>
