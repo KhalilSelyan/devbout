@@ -4,14 +4,25 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import { Textarea } from '$lib/components/ui/textarea';
+	import { route } from '$lib/ROUTES';
+	import type { hackathonService } from '$lib/server/db/hackathonService';
 	import { trpc } from '$lib/trpc';
 	import { cn } from '$lib/utils';
 	import { submissionSchema } from '$lib/zodValidations/submissionSchema';
 	import { superForm } from 'sveltekit-superforms';
 	import { zod } from 'sveltekit-superforms/adapters';
 
-	let { hackathonId }: { hackathonId: string } = $props();
+	let {
+		hackathonId,
+		userHackathons
+	}: {
+		hackathonId: string;
+		userHackathons: Awaited<ReturnType<typeof hackathonService.getUserHackathons>>;
+	} = $props();
 	let isDialogOpen = $state(false);
+	let isSubmitted = $state(false);
+	const currentTeamId =
+		userHackathons.find((hackathon) => hackathon.id === hackathonId)?.teams[0].id || '';
 
 	// Initialize form data
 	const initialData = {
@@ -19,28 +30,33 @@
 		description: '',
 		teamId: '',
 		projectName: '',
-		title: '',
 		githubUrl: '',
 		submissionUrl: '',
 		score: 0
 	};
 
-	let createSubMutation = trpc.submission.createSubmission.mutation();
-
 	const sf = superForm(initialData, {
 		validators: zod(submissionSchema),
 		dataType: 'json',
 		resetForm: true,
+		onSubmit: () => {
+			isSubmitted = true;
+		},
 		onUpdated: ({ form }) => {
 			if (form.valid) {
-				$createSubMutation.mutate(form.data);
-				trpc.submission.getSubmissionsByHackathonId.utils.invalidate(hackathonId);
+				console.log('Form submitted successfully', form.data);
+				trpc.hackathon.getHackathonDetails.utils.invalidate({ hackathonId });
 				isDialogOpen = false;
+				isSubmitted = false;
+			} else {
+				console.log(form);
 			}
 		}
 	});
 
 	const { form, enhance, errors, message } = sf;
+
+	$form.teamId = currentTeamId;
 </script>
 
 <Dialog.Root
@@ -71,12 +87,24 @@
 			<div class="mb-4 text-destructive">{$message}</div>
 		{/if}
 
-		<form use:enhance method="POST" class="flex flex-col gap-6">
+		<form
+			use:enhance
+			action={route('createSubmission /hackathons/[id]', {
+				id: hackathonId
+			})}
+			method="POST"
+			class="flex flex-col gap-6"
+		>
 			<div class="flex flex-col gap-2">
-				<label for="title">Project Title</label>
-				<Input id="title" name="title" bind:value={$form.title} />
-				{#if $errors.title}
-					<div class="text-destructive">{$errors.title}</div>
+				<label for="projectName">Project Name</label>
+				<Input
+					id="projectName"
+					name="projectName"
+					bind:value={$form.projectName}
+					placeholder="Enter your project name"
+				/>
+				{#if $errors.projectName}
+					<div class="text-destructive">{$errors.projectName}</div>
 				{/if}
 			</div>
 
@@ -119,16 +147,19 @@
 				{/if}
 			</div>
 
+			<input type="hidden" id="teamId" name="teamId" bind:value={$form.teamId} />
+			<input type="hidden" id="score" name="score" bind:value={$form.score} />
 			<input type="hidden" name="hackathonId" bind:value={$form.hackathonId} />
 
 			<div class="flex items-center justify-end gap-2">
 				<Button
+					disabled={isSubmitted}
 					onclick={() => {
 						isDialogOpen = false;
 					}}
 					variant="destructive">Cancel</Button
 				>
-				<Button type="submit">Submit Project</Button>
+				<Button disabled={isSubmitted} type="submit">Submit Project</Button>
 			</div>
 		</form>
 	</Dialog.Content>

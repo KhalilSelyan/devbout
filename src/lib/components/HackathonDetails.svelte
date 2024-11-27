@@ -13,8 +13,17 @@
 	type Hackathon = NonNullable<Awaited<ReturnType<typeof hackathonService.getHackathonDetails>>>;
 	type Teams = NonNullable<Awaited<ReturnType<typeof teamService.getHackathonTeams>>>;
 
-	let { user, hackathon, teams }: { user: User | undefined; hackathon: Hackathon; teams: Teams } =
-		$props();
+	let {
+		user,
+		hackathon,
+		teams,
+		userHackathons
+	}: {
+		user: User | undefined;
+		hackathon: Hackathon;
+		teams: Teams;
+		userHackathons: Awaited<ReturnType<typeof hackathonService.getUserHackathons>>;
+	} = $props();
 
 	let hackathonQuery = trpc.hackathon.getHackathonDetails.query(
 		{ hackathonId: hackathon.id },
@@ -58,7 +67,7 @@
 				<TeamsTab hackathon={$hackathonQuery.data} {teams} />
 			</TabsContent>
 			<TabsContent value="submissions">
-				<SubmissionsTab hackathon={$hackathonQuery.data} />
+				<SubmissionsTab hackathon={$hackathonQuery.data} {userHackathons} />
 			</TabsContent>
 		</Tabs>
 	</main>

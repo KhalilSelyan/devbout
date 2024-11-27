@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { Badge } from '$lib/components/ui/badge';
-	import { Button } from '$lib/components/ui/button';
 	import {
 		Card,
 		CardContent,
@@ -15,7 +14,15 @@
 
 	type Hackathon = Awaited<ReturnType<typeof hackathonService.getHackathonDetails>>;
 
-	let { hackathon }: { hackathon: Hackathon } = $props();
+	let {
+		hackathon,
+		userHackathons
+	}: {
+		hackathon: Hackathon;
+		userHackathons: Awaited<ReturnType<typeof hackathonService.getUserHackathons>>;
+	} = $props();
+
+	let isUserHackathon = userHackathons.some((hackathon) => hackathon.id === hackathon.id);
 </script>
 
 {#if hackathon}
@@ -66,7 +73,9 @@
 			</ul>
 		</CardContent>
 		<CardFooter>
-			<SubmissionDialog hackathonId={hackathon.id} />
+			{#if isUserHackathon}
+				<SubmissionDialog hackathonId={hackathon.id} {userHackathons} />
+			{/if}
 		</CardFooter>
 	</Card>
 {/if}

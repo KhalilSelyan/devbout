@@ -4,4 +4,9 @@
 	let { data } = $props();
 </script>
 
-<HackathonDetails user={data.user} hackathon={data.hackathon} teams={data.teams} />
+<HackathonDetails
+	userHackathons={data.userHackathons}
+	user={data.user}
+	hackathon={data.hackathon}
+	teams={data.teams}
+/>

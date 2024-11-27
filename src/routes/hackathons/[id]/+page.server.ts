@@ -7,10 +7,13 @@ import { teamSchema, teamJoinRequestSchema } from '$lib/zodValidations/teamSchem
 import { superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import { fail } from '@sveltejs/kit';
+import { submissionSchema } from '$lib/zodValidations/submissionSchema';
+import { submissionService } from '$lib/server/db/submissionService';
 
 export const load = (async ({ params, locals }) => {
 	const hackathonDetails = await hackathonService.getHackathonDetails(params.id);
 	const teams = await teamService.getHackathonTeams(params.id);
+	const userHackathons = await hackathonService.getUserHackathons(locals.user?.id);
 
 	if (
 		!hackathonDetails ||
@@ -24,6 +27,7 @@ export const load = (async ({ params, locals }) => {
 	return {
 		hackathon: hackathonDetails,
 		teams,
+		userHackathons,
 		createTeamForm,
 		joinRequestForm
 	};
@@ -66,6 +70,27 @@ export const actions = {
 		} catch (error) {
 			console.error(error);
 			return fail(500, { form, message: 'Failed to submit join request' });
+		}
+	},
+	createSubmission: async (event) => {
+		const form = await superValidate(event, zod(submissionSchema));
+
+		if (!form.valid) {
+			return fail(400, { form });
+		}
+
+		if (!event.locals.user) return fail(401, { form });
+
+		try {
+			await submissionService.createSubmission({
+				...form.data,
+				score: form.data.score?.toString()
+			});
+
+			return { form };
+		} catch (error) {
+			console.error(error);
+			return fail(500, { form, message: 'Failed to submit project' });
 		}
 	}
 };
