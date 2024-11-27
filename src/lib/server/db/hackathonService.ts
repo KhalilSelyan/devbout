@@ -136,7 +136,8 @@ export const hackathonService = {
 			.orderBy(hackathon.createdAt);
 	},
 
-	async getUserHackathons(userId: string) {
+	async getUserHackathons(userId: string | undefined) {
+		if (!userId) return [];
 		return await db.query.hackathon.findMany({
 			with: {
 				teams: {
