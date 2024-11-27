@@ -77,7 +77,7 @@ export const teamService = {
 		}
 
 		const existingMembership = await db.query.teamMember.findFirst({
-			where: and(eq(teamMember.userId, userId), eq(team.hackathonId, targetTeam.hackathonId)),
+			where: eq(teamMember.userId, userId),
 			with: {
 				team: true
 			}
@@ -103,69 +103,73 @@ export const teamService = {
 
 	// Handle join request (accept/reject)
 	async handleJoinRequest(requestId: string, leaderId: string, status: 'ACCEPTED' | 'REJECTED') {
-		const request = await db.query.teamJoinRequest.findFirst({
-			where: eq(teamJoinRequest.id, requestId),
-			with: {
-				team: {
-					with: {
-						members: true
+		try {
+			const request = await db.query.teamJoinRequest.findFirst({
+				where: eq(teamJoinRequest.id, requestId),
+				with: {
+					team: {
+						with: {
+							members: true
+						}
 					}
 				}
-			}
-		});
-
-		if (!request) {
-			throw new Error('Join request not found');
-		}
-
-		// Verify that the user handling the request is the team leader
-		const isLeader = await db.query.teamMember.findFirst({
-			where: and(
-				eq(teamMember.teamId, request.teamId),
-				eq(teamMember.userId, leaderId),
-				eq(teamMember.role, 'LEADER')
-			)
-		});
-
-		if (!isLeader) {
-			throw new Error('Only team leader can handle join requests');
-		}
-
-		// If accepting, check team size limits
-		if (status === 'ACCEPTED') {
-			const currentTeamSize = request.team.members.length;
-			const hackathon = await db.query.hackathon.findFirst({
-				where: eq(team.hackathonId, request.team.hackathonId)
 			});
 
-			if (hackathon && currentTeamSize >= hackathon.maxTeamSize) {
-				throw new Error('Team is full');
+			if (!request) {
+				throw new Error('Join request not found');
 			}
-		}
 
-		return await db.transaction(async (tx) => {
-			// Update request status
-			await tx
-				.update(teamJoinRequest)
-				.set({
-					status,
-					updatedAt: new Date()
-				})
-				.where(eq(teamJoinRequest.id, requestId));
+			// Verify that the user handling the request is the team leader
+			const isLeader = await db.query.teamMember.findFirst({
+				where: and(
+					eq(teamMember.teamId, request.teamId),
+					eq(teamMember.userId, leaderId),
+					eq(teamMember.role, 'LEADER')
+				)
+			});
 
-			// If accepted, add user to team
+			if (!isLeader) {
+				throw new Error('Only team leader can handle join requests');
+			}
+
+			// If accepting, check team size limits
 			if (status === 'ACCEPTED') {
-				await tx.insert(teamMember).values({
-					id: nanoid(),
-					teamId: request.teamId,
-					userId: request.userId,
-					role: 'MEMBER',
-					joinedAt: new Date()
-				});
+				// const currentTeamSize = request.team.members.length;
+				// const hackathon = await db.query.hackathon.findFirst({
+				// 	where: eq(team.hackathonId, request.team.hackathonId)
+				// });
+				// if (hackathon && currentTeamSize >= hackathon.maxTeamSize) {
+				// 	throw new Error('Team is full');
+				// }
 			}
 
-			return request;
-		});
+			return await db.transaction(async (tx) => {
+				// Update request status
+				await tx
+					.update(teamJoinRequest)
+					.set({
+						status,
+						updatedAt: new Date()
+					})
+					.where(eq(teamJoinRequest.id, requestId));
+
+				// If accepted, add user to team
+				if (status === 'ACCEPTED') {
+					await tx.insert(teamMember).values({
+						id: nanoid(),
+						teamId: request.teamId,
+						userId: request.userId,
+						role: 'MEMBER',
+						joinedAt: new Date()
+					});
+				}
+
+				return request;
+			});
+		} catch (error) {
+			console.error('Error handling join request:', error);
+			throw new Error('An error occurred while handling the join request');
+		}
 	},
 
 	// Get pending join requests for a team
