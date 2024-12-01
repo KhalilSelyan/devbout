@@ -13,9 +13,9 @@
 
 	let { user }: { user: User | undefined } = $props();
 
-	const isWalletConnected = $state(appKit.getIsConnectedState());
-	const walletInfo = $state(appKit.getWalletInfo());
-	const address = $state(appKit.getAddress());
+	let isWalletConnected = $state(appKit.getIsConnectedState());
+	let walletInfo = $state(appKit.getWalletInfo());
+	let address = $state(appKit.getAddress());
 </script>
 
 <header class="container mx-auto flex items-center justify-between py-6">
