@@ -16,6 +16,12 @@
 	let isWalletConnected = $state(appKit.getIsConnectedState());
 	let walletInfo = $state(appKit.getWalletInfo());
 	let address = $state(appKit.getAddress());
+
+	$effect(() => {
+		isWalletConnected = appKit.getIsConnectedState();
+		walletInfo = appKit.getWalletInfo();
+		address = appKit.getAddress();
+	});
 </script>
 
 <header class="container mx-auto flex items-center justify-between py-6">
