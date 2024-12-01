@@ -1,17 +1,15 @@
 <script lang="ts">
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import type { trpcServer } from '$lib/server/server';
-	import { trpc } from '$lib/trpc';
 	import type { inferAsyncReturnType } from '@trpc/server';
-	import { Github, Star, Wallet } from 'lucide-svelte';
+	import { Github, Star } from 'lucide-svelte';
 	import { Badge } from '../ui/badge';
-	import { appKit } from '$lib/appKit';
 
 	let {
 		userProfileData
-	}: { userProfileData: inferAsyncReturnType<typeof trpcServer.user.getProfile.ssr> } = $props();
-
-	let updateWalletInfoMutation = trpc.user.updateWalletAddress.mutation();
+	}: {
+		userProfileData: inferAsyncReturnType<typeof trpcServer.user.getProfile.ssr>;
+	} = $props();
 </script>
 
 <div class="grid gap-4 md:grid-cols-2">
@@ -21,39 +19,6 @@
 		</CardHeader>
 		<CardContent>
 			<div class="space-y-4">
-				<div class="flex items-center justify-between">
-					<div class="flex items-center space-x-2">
-						<Wallet class="h-4 w-4 text-emerald-500" />
-						{#if userProfileData?.walletAddress}
-							<span>
-								{userProfileData?.walletAddress}
-							</span>
-						{:else}
-							<span>
-								No wallet connected, please
-								<button
-									onclick={async () => {
-										await appKit.open();
-										const walletAddress = appKit.getAddress();
-										if (walletAddress)
-											$updateWalletInfoMutation.mutateAsync(
-												{ walletAddress },
-												{
-													onSuccess: () => {
-														if (userProfileData)
-															trpc.user.getProfile.utils.invalidate(userProfileData.id);
-													}
-												}
-											);
-									}}
-									class="animate-bounce text-emerald-400"
-								>
-									Connect yours
-								</button>
-							</span>
-						{/if}
-					</div>
-				</div>
 				<div class="flex items-center justify-between">
 					<div class="flex items-center space-x-2">
 						<Github class="h-4 w-4 text-gray-500" />
