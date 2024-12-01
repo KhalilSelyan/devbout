@@ -78,7 +78,6 @@
 				Explore Hackathons
 				<ChevronRight class="ml-2 h-4 w-4" />
 			</Button>
-			<Button size="lg" variant="outline">Host a Hackathon</Button>
 		</div>
 	</div>
 
