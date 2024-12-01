@@ -6,6 +6,7 @@
 	import { setupViewTransition } from 'sveltekit-view-transition';
 
 	import '../app.css';
+	import { Toaster } from '$lib/components/ui/sonner';
 
 	setupViewTransition();
 
@@ -14,6 +15,7 @@
 </script>
 
 <div>
+	<Toaster richColors position="bottom-right" />
 	<QueryClientProvider client={queryClient}>
 		<Header user={data.user} />
 		{@render children()}
