@@ -4,12 +4,14 @@ import { hackathonSchema } from '$lib/zodValidations/hackathonSchema';
 import { superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import type { PageServerLoad } from './$types';
+import { parse } from 'devalue';
 
 export const load = (async (event) => {
 	const hackathons = await trpcServer.hackathon.getHackathons.ssr(undefined, event);
 
 	const form = await superValidate(zod(hackathonSchema), {
 		defaults: {
+			hackathonid: '',
 			name: '',
 			description: '',
 			startDate: new Date(),
@@ -28,7 +30,8 @@ export const load = (async (event) => {
 
 export const actions = {
 	default: async (event) => {
-		const form = await superValidate(event, zod(hackathonSchema));
+		const formData = parse((await event.request.formData()).get('__superform_json') as string);
+		const form = await superValidate(formData, zod(hackathonSchema));
 
 		if (!form.valid) {
 			console.log('Form validation failed:', {
@@ -43,7 +46,12 @@ export const actions = {
 			};
 		}
 
-		if (!event.locals.user?.id) return;
+		if (!event.locals.user?.id) {
+			return {
+				form,
+				message: 'Please Make sure you are logged in'
+			};
+		}
 
 		try {
 			await hackathonService.createHackathon({
@@ -51,7 +59,8 @@ export const actions = {
 				prizePool: form.data.basePrize,
 				minTeamSize: Number(form.data.minTeamSize),
 				maxTeamSize: Number(form.data.maxTeamSize),
-				organizerId: event.locals.user.id
+				organizerId: event.locals.user.id,
+				id: form.data.hackathonid
 			});
 
 			return {

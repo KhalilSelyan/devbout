@@ -8,6 +8,7 @@ const HackathonStatusEnum = z.enum(['DRAFT', 'OPEN', 'ONGOING', 'JUDGING', 'COMP
 const FundingTypeEnum = z.enum(['FULLY_FUNDED', 'CROWDFUNDED', 'HYBRID']);
 
 const HackathonCreateSchema = z.object({
+	hackathonid: z.string().min(1),
 	name: z.string().min(3, 'Hackathon name must be at least 3 characters'),
 	description: z.string().min(10, 'Description must be at least 10 characters'),
 	startDate: z.date(),
@@ -48,6 +49,7 @@ export const hackathonRouter = router({
 	createHackathon: authedProcedure.input(HackathonCreateSchema).mutation(async ({ input, ctx }) => {
 		return await hackathonService.createHackathon({
 			...input,
+			id: input.hackathonid,
 			organizerId: ctx.user.id
 		});
 	}),

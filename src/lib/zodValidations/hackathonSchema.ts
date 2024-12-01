@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export const hackathonSchema = z
 	.object({
+		hackathonid: z.string().min(1),
 		name: z
 			.string()
 			.trim()
@@ -20,9 +21,7 @@ export const hackathonSchema = z
 		status: z.enum(['DRAFT', 'OPEN', 'ONGOING', 'JUDGING', 'COMPLETED'], {
 			errorMap: () => ({ message: 'Invalid status type selected' })
 		}),
-		basePrize: z
-			.string()
-			.refine((val) => /^\d+$/.test(val), { message: 'Base prize must be a positive number' }),
+		basePrize: z.string(),
 		// .transform((val) => parseInt(val, 10)),
 		fundingType: z.enum(['FULLY_FUNDED', 'CROWDFUNDED', 'HYBRID'], {
 			errorMap: () => ({ message: 'Invalid funding type selected' })

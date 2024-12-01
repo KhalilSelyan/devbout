@@ -7,9 +7,8 @@ import {
 	team
 } from './schema';
 import { eq, sql, and, or, not } from 'drizzle-orm';
-import { nanoid } from 'nanoid';
 
-type HackathonCreateInput = Omit<typeof hackathon.$inferInsert, 'id'>;
+type HackathonCreateInput = typeof hackathon.$inferInsert;
 type HackathonUpdateInput = Partial<HackathonCreateInput>;
 
 export const hackathonService = {
@@ -19,7 +18,6 @@ export const hackathonService = {
 			.insert(hackathon)
 			.values({
 				...data,
-				id: nanoid(), // Use provided ID or generate new
 				createdAt: new Date(),
 				updatedAt: new Date()
 			})

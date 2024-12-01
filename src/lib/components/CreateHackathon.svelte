@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { PUBLIC_CONTRACT_ADDRESS } from '$env/static/public';
+	import { appKit } from '$lib/appKit';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button, buttonVariants } from '$lib/components/ui/button';
 	import DateRangePicker from '$lib/components/ui/date-range-picker/DateRangePicker.svelte';
@@ -8,26 +10,98 @@
 	import { Slider } from '$lib/components/ui/slider';
 	import { Switch } from '$lib/components/ui/switch';
 	import { Textarea } from '$lib/components/ui/textarea';
+	import { createHackathon, switchToTargetNetwork } from '$lib/contract';
+	import { trpc } from '$lib/trpc';
 	import { hackathonSchema } from '$lib/zodValidations/hackathonSchema';
-	import { DollarSign, Trash2 } from 'lucide-svelte';
-	import { superForm, type Infer, type SuperValidated } from 'sveltekit-superforms';
-	import { zod } from 'sveltekit-superforms/adapters';
-
 	import { CalendarDate } from '@internationalized/date';
 	import type { DateRange } from 'bits-ui';
-	import { Label } from './ui/label';
-	import { trpc } from '$lib/trpc';
+	import { ethers } from 'ethers';
+	import { Trash2 } from 'lucide-svelte';
+	import { superForm, type FormPath, type Infer, type SuperValidated } from 'sveltekit-superforms';
+	import { zod } from 'sveltekit-superforms/adapters';
+	import { contractabi } from '$lib/contractabi';
+	import { Label } from '$lib/components/ui/label';
+	import { nanoid } from 'nanoid';
 
 	// Use page store to get initial form data
 	let { data }: { data: SuperValidated<Infer<typeof hackathonSchema>> } = $props();
 
+	async function beforeAddHackathonToDb({
+		_hackathonId,
+		_isCrowdfunded,
+		basePrize = '0.000005'
+	}: {
+		_hackathonId: string;
+		_isCrowdfunded: boolean;
+		basePrize?: string;
+	}) {
+		// If not connected open the modal to connect
+		if (!appKit.getIsConnectedState()) {
+			await appKit.open();
+		}
+
+		// if now connected show the rest if not ignore
+		if (appKit.getIsConnectedState()) {
+			// const contributorAddress = appKit.getAddress();
+
+			const provider = appKit.getWalletProvider();
+
+			if (!provider) {
+				console.error('Wallet provider is not available.');
+				return false;
+			}
+
+			try {
+				// Initialize ethers.js provider
+				const ethersProvider = new ethers.providers.Web3Provider(provider);
+
+				// Ensure correct network
+				await switchToTargetNetwork(ethersProvider, 'eth');
+				const contract = new ethers.Contract(
+					PUBLIC_CONTRACT_ADDRESS,
+					contractabi,
+					ethersProvider!.getSigner()
+				);
+
+				await createHackathon({
+					_hackathonId,
+					_isCrowdfunded,
+					basePrize,
+					contract
+				});
+				return true;
+			} catch (err) {
+				console.error(err);
+				return false;
+			}
+		}
+		return true;
+	}
+
 	let isDialogOpen = $state(false);
+	let hackathonId = $state(nanoid());
 	// Create superForm with improved configuration
 	const sf = superForm(data, {
 		validators: zod(hackathonSchema),
 		dataType: 'json',
-		resetForm: true,
+		resetForm: false,
+		onSubmit: async ({ cancel, jsonData, formData }) => {
+			// Send all data, not just tainted fields
+			const allData = Object.fromEntries(Object.entries($form));
+			if (String(formData.get('status')) !== 'DRAFT') {
+				const hasGoneThrough = await beforeAddHackathonToDb({
+					_hackathonId: String(formData.get('hackathonid')),
+					_isCrowdfunded: Boolean(formData.get('fundingType')),
+					basePrize: String(formData.get('basePrize'))
+				});
+				console.log({ hasGoneThrough });
+				if (!hasGoneThrough) cancel();
+			}
+			// Set data to be posted
+			jsonData(allData);
+		},
 		onUpdated: ({ form }) => {
+			console.log({ form });
 			if (form.valid) {
 				console.log('Form submitted successfully', form.data);
 				trpc.hackathon.getHackathons.utils.invalidate();
@@ -40,13 +114,25 @@
 
 	function addCriterion() {
 		if ($form.judgingCriteria.length < 5) {
-			$form.judgingCriteria = [...$form.judgingCriteria, { name: 'New Criterion', weight: 0 }];
+			form.update(
+				($form) => {
+					$form.judgingCriteria = [...$form.judgingCriteria, { name: 'New Criterion', weight: 0 }];
+					return $form;
+				},
+				{ taint: false }
+			);
 		}
 	}
 
 	function removeCriterion(index: number) {
 		if ($form.judgingCriteria.length > 1) {
-			$form.judgingCriteria = $form.judgingCriteria.filter((_, i) => i !== index);
+			form.update(
+				($form) => {
+					$form.judgingCriteria = $form.judgingCriteria.filter((_, i) => i !== index);
+					return $form;
+				},
+				{ taint: false }
+			);
 		}
 	}
 
@@ -55,7 +141,13 @@
 		const max = $form.maxTeamSize;
 
 		if (min > max) {
-			$form.maxTeamSize = min;
+			form.update(
+				($form) => {
+					$form.maxTeamSize = min;
+					return $form;
+				},
+				{ taint: false }
+			);
 		}
 	}
 
@@ -79,10 +171,16 @@
 	});
 
 	const updateDateValue = (date: DateRange) => {
-		if (!date.end || !date.start) return;
-		dateValue = date;
-		$form.startDate = date.start.toDate('utc');
-		$form.endDate = date.end.toDate('utc');
+		form.update(
+			($form) => {
+				if (!date.end || !date.start) return $form;
+				dateValue = date;
+				$form.startDate = date.start.toDate('utc');
+				$form.endDate = date.end.toDate('utc');
+				return $form;
+			},
+			{ taint: false }
+		);
 	};
 </script>
 
@@ -92,6 +190,14 @@
 	onOpenChange={(isOpen) => {
 		if (!isOpen) {
 			sf.reset();
+		} else {
+			form.update(
+				($form) => {
+					$form.hackathonid = hackathonId;
+					return $form;
+				},
+				{ taint: false }
+			);
 		}
 	}}
 >
@@ -127,6 +233,14 @@
 				<Textarea id="description" name="description" bind:value={$form.description} />
 				{#if $errors.description}
 					<div class="text-destructive">{$errors.description}</div>
+				{/if}
+			</div>
+
+			<div class="hidden">
+				<label for="hackathonid">hackathonid</label>
+				<Textarea id="hackathonid" name="hackathonid" bind:value={$form.hackathonid} />
+				{#if $errors.hackathonid}
+					<div class="text-destructive">{$errors.hackathonid}</div>
 				{/if}
 			</div>
 
@@ -171,13 +285,10 @@
 
 			<div class="flex flex-col gap-2">
 				<label for="basePrize">Base Prize</label>
-				<div class="relative">
-					<DollarSign
-						class="absolute left-3 top-1/2 -translate-y-1/2 transform text-muted-foreground"
-					/>
+				<div class="relative flex items-center gap-2">
+					<Label>Eth</Label>
 					<Input
 						id="basePrize"
-						class="pl-8"
 						placeholder="Enter base prize amount"
 						name="basePrize"
 						bind:value={$form.basePrize}
