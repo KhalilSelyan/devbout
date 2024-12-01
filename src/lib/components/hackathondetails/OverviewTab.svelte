@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { authClient } from '$lib/auth-client';
 	import { Button } from '$lib/components/ui/button';
 	import {
 		Card,
@@ -16,6 +15,7 @@
 	import { Calendar, DollarSign, Users } from 'lucide-svelte';
 	import { Label } from '../ui/label';
 	import { Separator } from '../ui/separator';
+	import { toast } from 'svelte-sonner';
 
 	type Hackathon = Awaited<ReturnType<typeof hackathonService.getHackathonDetails>>;
 
@@ -60,13 +60,12 @@
 			<div>
 				<h3 class="mb-2 text-lg font-semibold">Prize Pool</h3>
 				<div class="flex items-center space-x-2">
-					<DollarSign class="h-5 w-5 text-green-500" />
-					<span class="text-2xl font-bold">
-						{parseInt(hackathon.prizePool ?? '0').toLocaleString()}</span
-					>
+					<span>Eth</span>
+					<span class="text-2xl font-bold"> {(hackathon.prizePool ?? '0').toLocaleString()}</span>
 				</div>
 				<p class="mt-1 text-sm text-gray-500">
-					Base Prize: ${parseInt(hackathon.basePrize ?? '0').toLocaleString()}
+					Base Prize: <span>Eth</span>
+					{(hackathon.basePrize ?? '0').toLocaleString()}
 				</p>
 			</div>
 			<div>
@@ -111,9 +110,16 @@
 					<Select.Root
 						type="single"
 						name="status"
-						bind:value={hackathon.status}
+						value={hackathon.status}
 						onValueChange={async (value) => {
-							const newStatus = value as typeof hackathon.status;
+							const newStatus = value as typeof hackathon.status | '';
+
+							if (hackathon.status !== 'DRAFT' && newStatus === 'DRAFT') {
+								return toast.error('Cannot Throw a Hackathon back into draft after publishing it.');
+							}
+							if (newStatus === '') {
+								return (value = hackathon.status);
+							}
 							await $updateStatusMutation.mutateAsync({
 								hackathonId: hackathon.id,
 								status: newStatus
