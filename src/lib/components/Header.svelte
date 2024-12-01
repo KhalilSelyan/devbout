@@ -18,9 +18,13 @@
 	let address = $state(appKit.getAddress());
 
 	$effect(() => {
-		isWalletConnected = appKit.getIsConnectedState();
-		walletInfo = appKit.getWalletInfo();
-		address = appKit.getAddress();
+		appKit.subscribeAccount((e) => {
+			isWalletConnected = e.isConnected;
+			address = e.address;
+		});
+		appKit.subscribeWalletInfo((e) => {
+			walletInfo = e;
+		});
 	});
 </script>
 
