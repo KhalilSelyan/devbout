@@ -7,8 +7,15 @@
 	import type { User } from 'better-auth';
 	import { LucideDoorOpen, LucideUser } from 'lucide-svelte';
 	import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+	import { appKit } from '$lib/appKit';
+	import { formatAddress } from '$lib/rn-utils/formatAddress';
+	import { Badge } from './ui/badge';
 
 	let { user }: { user: User | undefined } = $props();
+
+	const isWalletConnected = $state(appKit.getIsConnectedState());
+	const walletInfo = $state(appKit.getWalletInfo());
+	const address = $state(appKit.getAddress());
 </script>
 
 <header class="container mx-auto flex items-center justify-between py-6">
@@ -19,6 +26,17 @@
 		<Button variant="ghost">Leaderboard</Button>
 
 		{#if user}
+			{#if isWalletConnected}
+				<Badge onclick={() => appKit.open()} class="flex cursor-pointer items-center gap-2 p-2">
+					<img class="size-4" src={walletInfo?.icon} alt="walleticon" />
+					<span>
+						{address ? formatAddress(address) : 'Error fetching address'}
+					</span>
+				</Badge>
+			{:else}
+				<Badge class="cursor-pointer p-2" onclick={() => appKit.open()}>Connect wallet</Badge>
+			{/if}
+
 			<Popover.Root>
 				<Popover.Trigger>
 					<Avatar>
