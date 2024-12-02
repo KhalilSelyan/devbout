@@ -17,7 +17,7 @@
 	import type { DateRange } from 'bits-ui';
 	import { ethers } from 'ethers';
 	import { Trash2 } from 'lucide-svelte';
-	import { superForm, type FormPath, type Infer, type SuperValidated } from 'sveltekit-superforms';
+	import { superForm, type Infer, type SuperValidated } from 'sveltekit-superforms';
 	import { zod } from 'sveltekit-superforms/adapters';
 	import { contractabi } from '$lib/contractabi';
 	import { Label } from '$lib/components/ui/label';
