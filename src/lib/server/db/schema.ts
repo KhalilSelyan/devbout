@@ -15,14 +15,15 @@ export const hackathonStatusEnum = pgEnum('hackathon_status', [
 	'DRAFT',
 	'OPEN',
 	'ONGOING',
-	'JUDGING',
-	'COMPLETED'
+	'COMPLETED',
+	'JUDGING'
 ]);
 export const teamMemberRoleEnum = pgEnum('team_member_role', ['LEADER', 'MEMBER']);
 export const teamJoinRequestStatusEnum = pgEnum('team_join_request_status', [
 	'PENDING',
 	'ACCEPTED',
-	'REJECTED'
+	'REJECTED',
+	'CONFIRMED'
 ]);
 
 export const user = pgTable(
