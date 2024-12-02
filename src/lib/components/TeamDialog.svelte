@@ -12,6 +12,13 @@
 	import { zod } from 'sveltekit-superforms/adapters';
 	import { Label } from './ui/label';
 	import { route } from '$lib/ROUTES';
+	import { nanoid } from 'nanoid';
+	import { joinHackathon, switchToTargetNetwork } from '$lib/contract';
+	import { ethers } from 'ethers';
+	import { PUBLIC_CONTRACT_ADDRESS } from '$env/static/public';
+	import { contractabi } from '$lib/contractabi';
+	import { appKit } from '$lib/appKit';
+	import { useWalletState } from '$lib/appKitState.svelte';
 
 	type Teams = NonNullable<Awaited<ReturnType<typeof teamService.getHackathonTeams>>>;
 
@@ -21,11 +28,52 @@
 
 	let teamsloaded = trpc.team.getHackathonTeams.query(hackathonId, { initialData: teams });
 	let loading = $state(false);
+	let teamId = $state(nanoid());
+	const walletState = useWalletState();
+
+	async function addParticipantBeforeCreateJoinTeamInDb({
+		_hackathonId
+	}: {
+		_hackathonId: string;
+	}) {
+		// if now connected show the rest if not ignore
+		if (walletState.isWalletConnected) {
+			const provider = appKit.getWalletProvider();
+
+			if (!provider) {
+				console.error('Wallet provider is not available.');
+				return false;
+			}
+
+			try {
+				// Initialize ethers.js provider
+				const ethersProvider = new ethers.providers.Web3Provider(provider);
+
+				// Ensure correct network
+				await switchToTargetNetwork(ethersProvider, 'eth');
+				const contract = new ethers.Contract(
+					PUBLIC_CONTRACT_ADDRESS,
+					contractabi,
+					ethersProvider!.getSigner()
+				);
+
+				await joinHackathon({
+					_hackathonId,
+					contract
+				});
+				return true;
+			} catch (err) {
+				console.error(err);
+				return false;
+			}
+		}
+		return true;
+	}
 
 	// Create form for new team
 	const createTeamForm = superForm(
 		{
-			id: '',
+			id: teamId,
 			hackathonId,
 			name: '',
 			description: ''
@@ -34,9 +82,17 @@
 			validators: zod(teamSchema),
 			dataType: 'json',
 			resetForm: true,
+			onSubmit: async ({ cancel }) => {
+				const hasGoneThrough = await addParticipantBeforeCreateJoinTeamInDb({
+					_hackathonId: hackathonId
+				});
+
+				if (!hasGoneThrough) cancel();
+			},
 			onUpdated: ({ form }) => {
+				console.log({ form });
 				if (form.valid) {
-					trpc.team.getHackathonTeams.utils.invalidate(hackathonId);
+					trpc.hackathon.getHackathonDetails.utils.invalidate({ hackathonId });
 					isDialogOpen = false;
 				}
 			}
@@ -109,6 +165,7 @@
 					class="flex flex-col gap-4"
 				>
 					<input type="hidden" name="hackathonId" value={hackathonId} />
+					<input type="hidden" name="id" value={teamId} />
 
 					<div class="flex flex-col gap-2">
 						<Label for="teamName">Team Name</Label>

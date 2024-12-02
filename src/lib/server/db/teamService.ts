@@ -3,20 +3,17 @@ import { team, teamMember, teamJoinRequest } from './schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 
-type TeamCreateInput = Omit<typeof team.$inferInsert, 'id' | 'createdAt'>;
+type TeamCreateInput = Omit<typeof team.$inferInsert, 'createdAt'>;
 
 export const teamService = {
 	// Create a new team
 	async createTeam(data: TeamCreateInput, leaderId: string) {
-		const teamId = nanoid();
-
 		// Create team and add leader in a transaction
 		return await db.transaction(async (tx) => {
 			const newTeam = await tx
 				.insert(team)
 				.values({
 					...data,
-					id: teamId,
 					createdAt: new Date()
 				})
 				.returning();
@@ -24,7 +21,7 @@ export const teamService = {
 			// Add team leader
 			await tx.insert(teamMember).values({
 				id: nanoid(),
-				teamId: teamId,
+				teamId: data.id,
 				userId: leaderId,
 				role: 'LEADER',
 				joinedAt: new Date()
