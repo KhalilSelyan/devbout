@@ -44,10 +44,17 @@
 
 	const updateHackathonStateInContractBeforeDb = async ({
 		hackathon,
-		newStatus
+		newStatus,
+		stateMapping
 	}: {
 		newStatus: string;
 		hackathon: NonNullable<Hackathon>;
+		stateMapping: {
+			OPEN: HackathonState;
+			ONGOING: HackathonState;
+			JUDGING: HackathonState;
+			COMPLETED: HackathonState;
+		};
 	}) => {
 		if (walletState.isWalletConnected) {
 			const provider = appKit.getWalletProvider();
@@ -68,13 +75,6 @@
 					contractabi,
 					ethersProvider!.getSigner()
 				);
-
-				const stateMapping = {
-					OPEN: HackathonState.OPEN,
-					ONGOING: HackathonState.ONGOING,
-					JUDGING: HackathonState.JUDGING,
-					COMPLETED: HackathonState.COMPLETED
-				};
 
 				const mappedState = stateMapping[newStatus as Exclude<typeof hackathon.status, 'DRAFT'>];
 				try {
@@ -176,8 +176,23 @@
 						onValueChange={async (value) => {
 							const newStatus = value as typeof hackathon.status | '';
 
+							const stateMapping = {
+								OPEN: HackathonState.OPEN,
+								ONGOING: HackathonState.ONGOING,
+								JUDGING: HackathonState.JUDGING,
+								COMPLETED: HackathonState.COMPLETED
+							};
 							if (hackathon.status !== 'DRAFT' && newStatus === 'DRAFT') {
 								toast.error('Cannot Throw a Hackathon back into draft after publishing it.');
+								return;
+							}
+
+							const currentStatusValue =
+								stateMapping[hackathon.status as Exclude<typeof hackathon.status, 'DRAFT'>];
+							const newStatusValue =
+								stateMapping[newStatus as Exclude<typeof hackathon.status, 'DRAFT'>];
+							if (newStatusValue < currentStatusValue) {
+								toast.error('Cannot go back to a previous status.');
 								return;
 							}
 							if (newStatus === '') {
@@ -186,7 +201,8 @@
 							}
 							const hasGoneThrough = await updateHackathonStateInContractBeforeDb({
 								hackathon,
-								newStatus
+								newStatus,
+								stateMapping
 							});
 
 							if (!hasGoneThrough) return;
