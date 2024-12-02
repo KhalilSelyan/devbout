@@ -208,11 +208,11 @@
 										{/if}
 									</div>
 								{:else}
-									<div class="mt-4">
+									<!-- <div class="mt-4">
 										<Button variant="outline" class="w-full" onclick={() => leaveTeam(team.id)}>
 											Leave Team
 										</Button>
-									</div>
+									</div> -->
 								{/if}
 							</div>
 						{/each}
