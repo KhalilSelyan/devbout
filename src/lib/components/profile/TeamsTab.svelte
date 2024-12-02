@@ -6,23 +6,74 @@
 	import { Calendar, Check, X } from 'lucide-svelte';
 	import { trpc } from '$lib/trpc';
 	import type { User } from 'better-auth';
+	import { joinHackathon, switchToTargetNetwork } from '$lib/contract';
+	import { contractabi } from '$lib/contractabi';
+	import { PUBLIC_CONTRACT_ADDRESS } from '$env/static/public';
+	import { ethers } from 'ethers';
+	import { appKit } from '$lib/appKit';
+	import { useWalletState } from '$lib/appKitState.svelte';
 
 	let { user }: { user: User } = $props();
 	let userHackathons = trpc.hackathon.getUserHackathons.query(user.id);
 	let pendingRequests = trpc.team.getLeaderTeamRequests.query();
+	let acceptedRequests = trpc.team.getAcceptedJoinRequests.query();
 
 	// Mutations
 	let joinRequestMutation = trpc.team.handleJoinRequest.mutation();
 	let kickMemberMutation = trpc.team.kickMember.mutation();
 	let leaveTeamMutation = trpc.team.leaveTeam.mutation();
+	const walletState = useWalletState();
+
+	async function addParticipantBeforeCreateJoinTeamInDb({
+		_hackathonId
+	}: {
+		_hackathonId: string;
+	}) {
+		// if now connected show the rest if not ignore
+		if (walletState.isWalletConnected) {
+			const provider = appKit.getWalletProvider();
+
+			if (!provider) {
+				console.error('Wallet provider is not available.');
+				return false;
+			}
+
+			try {
+				// Initialize ethers.js provider
+				const ethersProvider = new ethers.providers.Web3Provider(provider);
+
+				// Ensure correct network
+				await switchToTargetNetwork(ethersProvider, 'eth');
+				const contract = new ethers.Contract(
+					PUBLIC_CONTRACT_ADDRESS,
+					contractabi,
+					ethersProvider!.getSigner()
+				);
+
+				await joinHackathon({
+					_hackathonId,
+					contract
+				});
+				return true;
+			} catch (err) {
+				console.error(err);
+				return false;
+			}
+		}
+		return true;
+	}
 
 	// Handle join request
-	async function handleJoinRequest(requestId: string, status: 'ACCEPTED' | 'REJECTED') {
+	async function handleJoinRequest(
+		requestId: string,
+		status: 'ACCEPTED' | 'REJECTED' | 'CONFIRMED'
+	) {
 		try {
 			await $joinRequestMutation.mutateAsync({ requestId, status });
 			// Refresh data
 			trpc.team.getLeaderTeamRequests.utils.invalidate();
 			trpc.hackathon.getUserHackathons.utils.invalidate(user.id);
+			trpc.team.getAcceptedJoinRequests.utils.invalidate();
 		} catch (error) {
 			console.error('Failed to handle join request:', error);
 		}
@@ -99,7 +150,7 @@
 														<Badge variant="secondary">Leader</Badge>
 													{/if}
 												</div>
-												{#if member.role === 'LEADER' && member.userId !== user.id}
+												<!-- {#if member.role === 'MEMBER' && member.userId !== user.id && user.id === team.members.find((member) => member.role === 'LEADER')!.userId}
 													<Button
 														variant="destructive"
 														size="sm"
@@ -107,7 +158,7 @@
 													>
 														Kick
 													</Button>
-												{/if}
+												{/if} -->
 											</li>
 										{/each}
 									</ul>
@@ -165,6 +216,43 @@
 								{/if}
 							</div>
 						{/each}
+					{/each}
+				</div>
+			{/if}
+
+			{#if $acceptedRequests.data && $acceptedRequests.data.length > 0}
+				<div class="flex flex-col gap-6">
+					{#each $acceptedRequests.data as request}
+						<div class="rounded-lg border p-4">
+							<h3 class="text-lg"><strong>Team Name:</strong> {request.team.name}</h3>
+							<p class="text-sm text-muted-foreground">
+								<strong>Message:</strong>
+								{request.message}
+							</p>
+							<div class="flex space-x-2">
+								<Button
+									size="sm"
+									variant="default"
+									onclick={async () => {
+										// Drop contract stuff here for adding participants
+										const hasGoneThrough = await addParticipantBeforeCreateJoinTeamInDb({
+											_hackathonId: ''
+										});
+										if (!hasGoneThrough) return;
+										await handleJoinRequest(request.id, 'CONFIRMED');
+									}}
+								>
+									Confirm
+								</Button>
+								<Button
+									size="sm"
+									variant="destructive"
+									onclick={() => handleJoinRequest(request.id, 'REJECTED')}
+								>
+									Reject
+								</Button>
+							</div>
+						</div>
 					{/each}
 				</div>
 			{/if}

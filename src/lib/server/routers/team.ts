@@ -4,6 +4,7 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 const teamCreateSchema = z.object({
+	id: z.string(),
 	hackathonId: z.string(),
 	name: z.string().min(3, 'Team name must be at least 3 characters'),
 	description: z.string().min(10, 'Description must be at least 10 characters')
@@ -21,7 +22,7 @@ const teamActionSchema = z.object({
 
 const handleJoinRequestSchema = z.object({
 	requestId: z.string(),
-	status: z.enum(['ACCEPTED', 'REJECTED'])
+	status: z.enum(['ACCEPTED', 'REJECTED', 'CONFIRMED'])
 });
 
 export const teamRouter = router({
@@ -156,5 +157,19 @@ export const teamRouter = router({
 	}),
 	getLeaderTeamRequests: authedProcedure.query(async ({ ctx }) => {
 		return await teamService.getLeaderTeamRequests(ctx.user.id);
+	}),
+
+	// Get accepted join requests for a user
+	getAcceptedJoinRequests: authedProcedure.query(async ({ ctx }) => {
+		try {
+			const requests = await teamService.getAcceptedJoinRequests(ctx.user.id);
+			return requests;
+		} catch (error) {
+			throw new TRPCError({
+				code: 'INTERNAL_SERVER_ERROR',
+				message: 'Failed to fetch accepted join requests',
+				cause: error
+			});
+		}
 	})
 });

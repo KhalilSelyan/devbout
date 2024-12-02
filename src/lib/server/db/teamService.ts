@@ -99,7 +99,11 @@ export const teamService = {
 	},
 
 	// Handle join request (accept/reject)
-	async handleJoinRequest(requestId: string, leaderId: string, status: 'ACCEPTED' | 'REJECTED') {
+	async handleJoinRequest(
+		requestId: string,
+		leaderId: string,
+		status: 'ACCEPTED' | 'REJECTED' | 'CONFIRMED'
+	) {
 		try {
 			const request = await db.query.teamJoinRequest.findFirst({
 				where: eq(teamJoinRequest.id, requestId),
@@ -125,12 +129,12 @@ export const teamService = {
 				)
 			});
 
-			if (!isLeader) {
+			if (!isLeader && status === 'ACCEPTED') {
 				throw new Error('Only team leader can handle join requests');
 			}
 
 			// If accepting, check team size limits
-			if (status === 'ACCEPTED') {
+			if (status === 'CONFIRMED') {
 				// const currentTeamSize = request.team.members.length;
 				// const hackathon = await db.query.hackathon.findFirst({
 				// 	where: eq(team.hackathonId, request.team.hackathonId)
@@ -150,8 +154,8 @@ export const teamService = {
 					})
 					.where(eq(teamJoinRequest.id, requestId));
 
-				// If accepted, add user to team
-				if (status === 'ACCEPTED') {
+				// If confirmed by user, add user to team
+				if (status === 'CONFIRMED') {
 					await tx.insert(teamMember).values({
 						id: nanoid(),
 						teamId: request.teamId,
@@ -305,6 +309,15 @@ export const teamService = {
 						user: true
 					}
 				}
+			}
+		});
+	},
+
+	async getAcceptedJoinRequests(userId: string) {
+		return await db.query.teamJoinRequest.findMany({
+			where: and(eq(teamJoinRequest.userId, userId), eq(teamJoinRequest.status, 'ACCEPTED')),
+			with: {
+				team: true // Include team details if needed
 			}
 		});
 	}
