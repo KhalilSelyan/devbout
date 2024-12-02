@@ -12,10 +12,16 @@
 	import type { hackathonService } from '$lib/server/db/hackathonService';
 	import { trpc } from '$lib/trpc';
 	import type { User } from 'better-auth';
-	import { Calendar, DollarSign, Users } from 'lucide-svelte';
+	import { Calendar, Users } from 'lucide-svelte';
 	import { Label } from '../ui/label';
 	import { Separator } from '../ui/separator';
 	import { toast } from 'svelte-sonner';
+	import { HackathonState, switchToTargetNetwork, updateHackathonState } from '$lib/contract';
+	import { useWalletState } from '$lib/appKitState.svelte';
+	import { appKit } from '$lib/appKit';
+	import { ethers } from 'ethers';
+	import { PUBLIC_CONTRACT_ADDRESS } from '$env/static/public';
+	import { contractabi } from '$lib/contractabi';
 
 	type Hackathon = Awaited<ReturnType<typeof hackathonService.getHackathonDetails>>;
 
@@ -33,6 +39,62 @@
 	const isHackathonCreator = $derived.by(() => {
 		if (hackathon) return hackathon.organizer.id === user?.id;
 	});
+
+	const walletState = useWalletState();
+
+	const updateHackathonStateInContractBeforeDb = async ({
+		hackathon,
+		newStatus
+	}: {
+		newStatus: string;
+		hackathon: NonNullable<Hackathon>;
+	}) => {
+		if (walletState.isWalletConnected) {
+			const provider = appKit.getWalletProvider();
+
+			if (!provider) {
+				console.error('Wallet provider is not available.');
+				return false;
+			}
+
+			try {
+				// Initialize ethers.js provider
+				const ethersProvider = new ethers.providers.Web3Provider(provider);
+
+				// Ensure correct network
+				await switchToTargetNetwork(ethersProvider, 'eth');
+				const contract = new ethers.Contract(
+					PUBLIC_CONTRACT_ADDRESS,
+					contractabi,
+					ethersProvider!.getSigner()
+				);
+
+				const stateMapping = {
+					OPEN: HackathonState.OPEN,
+					ONGOING: HackathonState.ONGOING,
+					JUDGING: HackathonState.JUDGING,
+					COMPLETED: HackathonState.COMPLETED
+				};
+
+				const mappedState = stateMapping[newStatus as Exclude<typeof hackathon.status, 'DRAFT'>];
+				try {
+					await updateHackathonState({
+						_hackathonId: hackathon.id,
+						_newState: mappedState,
+						contract
+					});
+				} catch (error) {
+					console.error(error);
+					return false;
+				}
+
+				return true;
+			} catch (err) {
+				console.error(err);
+				return false;
+			}
+		}
+	};
 </script>
 
 {#if hackathon}
@@ -115,11 +177,19 @@
 							const newStatus = value as typeof hackathon.status | '';
 
 							if (hackathon.status !== 'DRAFT' && newStatus === 'DRAFT') {
-								return toast.error('Cannot Throw a Hackathon back into draft after publishing it.');
+								toast.error('Cannot Throw a Hackathon back into draft after publishing it.');
+								return;
 							}
 							if (newStatus === '') {
-								return (value = hackathon.status);
+								value = hackathon.status;
+								return;
 							}
+							const hasGoneThrough = await updateHackathonStateInContractBeforeDb({
+								hackathon,
+								newStatus
+							});
+
+							if (!hasGoneThrough) return;
 							await $updateStatusMutation.mutateAsync({
 								hackathonId: hackathon.id,
 								status: newStatus

@@ -65,7 +65,7 @@ export async function recordContribution({
 	console.log('Transaction confirmed:', receipt.transactionHash);
 }
 
-enum HackathonState {
+export enum HackathonState {
 	OPEN = 0,
 	ONGOING = 1,
 	JUDGING = 2,
