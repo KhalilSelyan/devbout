@@ -117,7 +117,7 @@
 				<div class="flex items-center">
 					<DollarSign class="mr-2 h-4 w-4" />
 					<span class="text-sm">
-						Prize Pool: ${parseInt(singlehackathon.prizePool ?? '0').toLocaleString()}
+						Prize Pool: {singlehackathon.prizePool ?? 'Undefined'} ETH
 					</span>
 				</div>
 			</div>
