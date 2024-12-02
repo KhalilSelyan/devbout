@@ -30,7 +30,9 @@
 					<li class="rounded-lg border p-4">
 						<div class="mb-2 flex items-center justify-between">
 							<h3 class="text-lg font-semibold">{team.name}</h3>
-							<Badge variant="secondary">{team.members.length} members</Badge>
+							<Badge variant="secondary"
+								>{team.members.length} member{team.members.length > 1 ? 's' : ''}</Badge
+							>
 						</div>
 						<p class="mb-2 text-sm text-gray-500">
 							Members: {team.members.map((member) => member.user.name).join(', ')}
