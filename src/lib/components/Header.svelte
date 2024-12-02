@@ -10,22 +10,11 @@
 	import { appKit } from '$lib/appKit';
 	import { formatAddress } from '$lib/rn-utils/formatAddress';
 	import { Badge } from './ui/badge';
+	import { useWalletState } from '$lib/appKitState.svelte';
 
 	let { user }: { user: User | undefined } = $props();
 
-	let isWalletConnected = $state(appKit.getIsConnectedState());
-	let walletInfo = $state(appKit.getWalletInfo());
-	let address = $state(appKit.getAddress());
-
-	$effect(() => {
-		appKit.subscribeAccount((e) => {
-			isWalletConnected = e.isConnected;
-			address = e.address;
-		});
-		appKit.subscribeWalletInfo((e) => {
-			walletInfo = e;
-		});
-	});
+	const walletState = useWalletState();
 </script>
 
 <header class="container mx-auto flex items-center justify-between py-6">
@@ -36,11 +25,11 @@
 		<Button variant="ghost">Leaderboard</Button>
 
 		{#if user}
-			{#if isWalletConnected}
+			{#if walletState.isWalletConnected}
 				<Badge onclick={() => appKit.open()} class="flex cursor-pointer items-center gap-2 p-2">
-					<img class="size-4" src={walletInfo?.icon} alt="walleticon" />
+					<img class="size-4" src={walletState.walletInfo?.icon} alt="walleticon" />
 					<span>
-						{address ? formatAddress(address) : 'Error fetching address'}
+						{walletState.address ? formatAddress(walletState.address) : 'Error fetching address'}
 					</span>
 				</Badge>
 			{:else}
