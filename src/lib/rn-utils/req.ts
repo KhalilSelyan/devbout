@@ -86,7 +86,7 @@ export const prepareRequestParameters = ({
 			},
 			expectedAmount: amount,
 			payee: {
-				type: Types.Identity.TYPE.ETHEREUM_SMART_CONTRACT,
+				type: Types.Identity.TYPE.ETHEREUM_ADDRESS,
 				value: platformAddress
 			},
 			payer: {
@@ -283,7 +283,6 @@ export const handleRequestPayment = async ({
 			payee: requestParameters.requestInfo.payee
 		};
 	}
-
 	return inMemoryRequest;
 };
 
