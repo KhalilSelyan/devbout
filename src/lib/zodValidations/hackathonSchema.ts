@@ -21,8 +21,19 @@ export const hackathonSchema = z
 		status: z.enum(['DRAFT', 'OPEN', 'ONGOING', 'JUDGING', 'COMPLETED'], {
 			errorMap: () => ({ message: 'Invalid status type selected' })
 		}),
-		basePrize: z.string(),
-		// .transform((val) => parseInt(val, 10)),
+		basePrize: z.string().refine(
+			(value) => {
+				const numberValue = parseFloat(value);
+				return (
+					!isNaN(numberValue) &&
+					value === numberValue.toFixed(Math.min(5, value.split('.')[1]?.length || 0))
+				);
+			},
+			{
+				message:
+					'Base prize must be a string representing a number with a maximum of 5 decimal places'
+			}
+		),
 		fundingType: z.enum(['FULLY_FUNDED', 'CROWDFUNDED', 'HYBRID'], {
 			errorMap: () => ({ message: 'Invalid funding type selected' })
 		}),
