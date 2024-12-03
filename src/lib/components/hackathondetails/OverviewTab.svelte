@@ -20,8 +20,9 @@
 	import { useWalletState } from '$lib/appKitState.svelte';
 	import { appKit } from '$lib/appKit';
 	import { ethers } from 'ethers';
-	import { PUBLIC_CONTRACT_ADDRESS } from '$env/static/public';
+	import { PUBLIC_CONTRACT_ADDRESS, PUBLIC_PLATFORM_WALLET_ADDRESS } from '$env/static/public';
 	import { contractabi } from '$lib/contractabi';
+	import { handleRequestPayment, prepareRequestParameters } from '$lib/rn-utils/req';
 
 	type Hackathon = Awaited<ReturnType<typeof hackathonService.getHackathonDetails>>;
 
@@ -35,12 +36,116 @@
 		setCurrentTab: (tab: 'overview' | 'teams' | 'submissions' | 'contributors') => void;
 	} = $props();
 
+	const walletState = useWalletState();
+
 	let updateStatusMutation = trpc.hackathon.updateHackathonStatus.mutation();
 	const isHackathonCreator = $derived.by(() => {
 		if (hackathon) return hackathon.organizer.id === user?.id;
 	});
 
-	const walletState = useWalletState();
+	let isCreatingInContract = $state(false);
+	let createHackathonMutation = trpc.wallet.createHackathonThroughPlatformWallet.mutation();
+
+	async function addHackathonToContract({
+		_hackathonId,
+		_isCrowdfunded,
+		basePrize
+	}: {
+		_hackathonId: string;
+		_isCrowdfunded: boolean;
+		basePrize: string;
+	}) {
+		isCreatingInContract = true;
+		// If not connected open the modal to connect
+		if (!appKit.getIsConnectedState()) {
+			await appKit.open();
+		}
+
+		// if now connected show the rest if not ignore
+		if (appKit.getIsConnectedState()) {
+			const provider = appKit.getWalletProvider();
+
+			if (!provider) {
+				console.error('Wallet provider is not available.');
+				isCreatingInContract = false;
+				return false;
+			}
+
+			try {
+				// Initialize ethers.js provider
+				const ethersProvider = new ethers.providers.Web3Provider(provider);
+
+				// Ensure correct network
+				await switchToTargetNetwork(ethersProvider, 'eth');
+
+				const reqParams = prepareRequestParameters({
+					amountInCrypto: parseFloat(basePrize),
+					builderId: 'DevBout',
+					contributorInfo: {
+						address: undefined,
+						businessName: 'KhalilSelyan',
+						companyRegistration: 'KhalilSelyan',
+						email: 'khalil@leodrive.ai',
+						firstName: 'Khalil',
+						lastName: 'Selyan',
+						phone: '',
+						taxRegistration: ''
+					},
+					createdWith: 'DevBout',
+					currency: {
+						decimals: 18,
+						hash: '',
+						id: '',
+						network: 'sepolia',
+						symbol: 'ETH',
+						type: 'ETH',
+						address: 'eth',
+						name: 'sepolia'
+					},
+					feeAddress: '0x0000000000000000000000000000000000000000',
+					feeAmountInCrypto: 0,
+					payerAddress: appKit.getAddress()!,
+					platformAddress: PUBLIC_PLATFORM_WALLET_ADDRESS,
+					platformInfo: {
+						address: undefined,
+						businessName: 'DevBout',
+						companyRegistration: 'DevBout',
+						email: 'khalilselyan@gmail.com',
+						firstName: 'Dev',
+						lastName: 'Bout',
+						logo: '',
+						name: 'DevBout',
+						phone: '',
+						taxRegistration: ''
+					},
+					totalAmountInCrypto: parseFloat(basePrize)
+				});
+
+				const reshandle = await handleRequestPayment({
+					payerAddress: appKit.getAddress()!,
+					persistRequest: true,
+					walletProvider: provider,
+					requestParameters: reqParams
+				});
+
+				console.log({ requestId: reshandle.requestId });
+
+				// ON CONFIRM PAYMENT DONE , CALL TRPC ENDPOINT FOR TRANSFERING MONEY FROM PLATFORM WALLET TO SMARTCONTRACT.
+				$createHackathonMutation.mutate({
+					hackathonId: _hackathonId,
+					isCrowdfunded: _isCrowdfunded,
+					basePrize
+				});
+
+				return true;
+			} catch (err) {
+				console.error(err);
+				isCreatingInContract = false;
+				return false;
+			}
+		}
+		return true;
+	}
 
 	const updateHackathonStateInContractBeforeDb = async ({
 		hackathon,
@@ -169,64 +274,138 @@
 			{:else}
 				<div class="grid w-full grid-cols-4 items-center gap-2">
 					<Label>Update Hackathon Status</Label>
-					<Select.Root
-						type="single"
-						name="status"
-						value={hackathon.status}
-						onValueChange={async (value) => {
-							const newStatus = value as typeof hackathon.status | '';
+					{#if hackathon.status === 'DRAFT'}
+						<Select.Root
+							type="single"
+							name="status"
+							value={hackathon.status}
+							onValueChange={async (value) => {
+								const newStatus = value as typeof hackathon.status | '';
 
-							const stateMapping = {
-								OPEN: HackathonState.OPEN,
-								ONGOING: HackathonState.ONGOING,
-								JUDGING: HackathonState.JUDGING,
-								COMPLETED: HackathonState.COMPLETED
-							};
-							if (hackathon.status !== 'DRAFT' && newStatus === 'DRAFT') {
-								toast.error('Cannot Throw a Hackathon back into draft after publishing it.');
-								return;
-							}
+								const stateMapping = {
+									OPEN: HackathonState.OPEN
+								};
+								const currentStatusValue =
+									stateMapping[hackathon.status as Exclude<typeof hackathon.status, 'DRAFT'>];
+								const newStatusValue =
+									stateMapping[newStatus as Exclude<typeof hackathon.status, 'DRAFT'>];
+								if (newStatusValue < currentStatusValue) {
+									toast.error('Cannot go back to a previous status.');
+									return;
+								}
+								if (newStatus === '') {
+									value = hackathon.status;
+									return;
+								}
 
-							const currentStatusValue =
-								stateMapping[hackathon.status as Exclude<typeof hackathon.status, 'DRAFT'>];
-							const newStatusValue =
-								stateMapping[newStatus as Exclude<typeof hackathon.status, 'DRAFT'>];
-							if (newStatusValue < currentStatusValue) {
-								toast.error('Cannot go back to a previous status.');
-								return;
-							}
-							if (newStatus === '') {
-								value = hackathon.status;
-								return;
-							}
-							const hasGoneThrough = await updateHackathonStateInContractBeforeDb({
-								hackathon,
-								newStatus,
-								stateMapping
-							});
+								const hasGoneThrough = await addHackathonToContract({
+									_hackathonId: hackathon.id,
+									_isCrowdfunded:
+										hackathon.fundingType === 'CROWDFUNDED' || hackathon.fundingType === 'HYBRID'
+											? true
+											: false,
+									basePrize: hackathon.basePrize ?? '0'
+								});
 
-							if (!hasGoneThrough) return;
-							await $updateStatusMutation.mutateAsync({
-								hackathonId: hackathon.id,
-								status: newStatus
-							});
+								if (!hasGoneThrough) return;
+								isCreatingInContract = false;
 
-							trpc.hackathon.getHackathonDetails.utils.invalidate({ hackathonId: hackathon.id });
-						}}
-					>
-						<Select.Trigger class="col-span-3">
-							<span>{hackathon.status}</span>
-						</Select.Trigger>
-						<Select.Content>
-							<Select.Item value="DRAFT">Draft</Select.Item>
-							<Select.Item value="OPEN">Open</Select.Item>
-							<Select.Item value="ONGOING">Ongoing</Select.Item>
-							<Select.Item value="JUDGING">Judging</Select.Item>
-							<Select.Item value="COMPLETED">Completed</Select.Item>
-						</Select.Content>
-					</Select.Root>
+								await $updateStatusMutation.mutateAsync({
+									hackathonId: hackathon.id,
+									status: newStatus
+								});
+
+								trpc.hackathon.getHackathonDetails.utils.invalidate({ hackathonId: hackathon.id });
+							}}
+						>
+							<Select.Trigger class="col-span-3">
+								<span>{hackathon.status}</span>
+							</Select.Trigger>
+							<Select.Content>
+								<Select.Item value="DRAFT">Draft</Select.Item>
+								<Select.Item value="OPEN">Open</Select.Item>
+							</Select.Content>
+						</Select.Root>
+					{:else}
+						<Select.Root
+							type="single"
+							name="status"
+							value={hackathon.status}
+							onValueChange={async (value) => {
+								const newStatus = value as typeof hackathon.status | '';
+
+								const stateMapping = {
+									OPEN: HackathonState.OPEN,
+									ONGOING: HackathonState.ONGOING,
+									JUDGING: HackathonState.JUDGING,
+									COMPLETED: HackathonState.COMPLETED
+								};
+								const currentStatusValue =
+									stateMapping[hackathon.status as Exclude<typeof hackathon.status, 'DRAFT'>];
+								const newStatusValue =
+									stateMapping[newStatus as Exclude<typeof hackathon.status, 'DRAFT'>];
+								if (newStatusValue < currentStatusValue) {
+									toast.error('Cannot go back to a previous status.');
+									return;
+								}
+								if (newStatus === '') {
+									value = hackathon.status;
+									return;
+								}
+								const hasGoneThrough = await updateHackathonStateInContractBeforeDb({
+									hackathon,
+									newStatus,
+									stateMapping
+								});
+
+								if (!hasGoneThrough) return;
+								await $updateStatusMutation.mutateAsync({
+									hackathonId: hackathon.id,
+									status: newStatus
+								});
+
+								trpc.hackathon.getHackathonDetails.utils.invalidate({ hackathonId: hackathon.id });
+							}}
+						>
+							<Select.Trigger class="col-span-3">
+								<span>{hackathon.status}</span>
+							</Select.Trigger>
+							<Select.Content>
+								<Select.Item value="OPEN">Open</Select.Item>
+								<Select.Item value="ONGOING">Ongoing</Select.Item>
+								<Select.Item value="JUDGING">Judging</Select.Item>
+								<Select.Item value="COMPLETED">Completed</Select.Item>
+							</Select.Content>
+						</Select.Root>
+					{/if}
 				</div>
 			{/if}
 		</CardFooter>
 	</Card>
+{/if}
+
+{#if isCreatingInContract}
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+		<div class="loader"></div>
+	</div>
+
+	<style>
+		.loader {
+			border: 8px solid rgba(255, 255, 255, 0.3);
+			border-top: 8px solid #ffffff;
+			border-radius: 50%;
+			width: 50px;
+			height: 50px;
+			animation: spin 1s linear infinite;
+		}
+
+		@keyframes spin {
+			0% {
+				transform: rotate(0deg);
+			}
+			100% {
+				transform: rotate(360deg);
+			}
+		}
+	</style>
 {/if}
