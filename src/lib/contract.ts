@@ -4,12 +4,12 @@ import { getChainFromNetwork, getNetworkParams } from './rn-utils/req';
 export async function createHackathon({
 	_hackathonId,
 	_isCrowdfunded,
-	basePrize = '0.000005',
+	basePrize,
 	contract
 }: {
 	_hackathonId: string;
 	_isCrowdfunded: boolean;
-	basePrize?: string;
+	basePrize: string;
 	contract: ethers.Contract;
 }) {
 	const tx = await contract.createHackathon(_isCrowdfunded, _hackathonId, {
