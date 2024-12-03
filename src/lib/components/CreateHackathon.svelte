@@ -1,39 +1,41 @@
 <script lang="ts">
-	import { PUBLIC_CONTRACT_ADDRESS } from '$env/static/public';
+	import { PUBLIC_PLATFORM_WALLET_ADDRESS } from '$env/static/public';
 	import { appKit } from '$lib/appKit';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button, buttonVariants } from '$lib/components/ui/button';
 	import DateRangePicker from '$lib/components/ui/date-range-picker/DateRangePicker.svelte';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import { Input } from '$lib/components/ui/input';
+	import { Label } from '$lib/components/ui/label';
 	import * as Select from '$lib/components/ui/select';
 	import { Slider } from '$lib/components/ui/slider';
 	import { Switch } from '$lib/components/ui/switch';
 	import { Textarea } from '$lib/components/ui/textarea';
-	import { createHackathon, switchToTargetNetwork } from '$lib/contract';
+	import { switchToTargetNetwork } from '$lib/contract';
+	import { handleRequestPayment, prepareRequestParameters } from '$lib/rn-utils/req';
 	import { trpc } from '$lib/trpc';
 	import { hackathonSchema } from '$lib/zodValidations/hackathonSchema';
 	import { CalendarDate } from '@internationalized/date';
 	import type { DateRange } from 'bits-ui';
 	import { ethers } from 'ethers';
 	import { Trash2 } from 'lucide-svelte';
+	import { nanoid } from 'nanoid';
 	import { superForm, type Infer, type SuperValidated } from 'sveltekit-superforms';
 	import { zod } from 'sveltekit-superforms/adapters';
-	import { contractabi } from '$lib/contractabi';
-	import { Label } from '$lib/components/ui/label';
-	import { nanoid } from 'nanoid';
 
 	// Use page store to get initial form data
 	let { data }: { data: SuperValidated<Infer<typeof hackathonSchema>> } = $props();
 
+	let createHackathonMutation = trpc.wallet.createHackathonThroughPlatformWallet.mutation();
+
 	async function beforeAddHackathonToDb({
 		_hackathonId,
 		_isCrowdfunded,
-		basePrize = '0.000005'
+		basePrize
 	}: {
 		_hackathonId: string;
 		_isCrowdfunded: boolean;
-		basePrize?: string;
+		basePrize: string;
 	}) {
 		// If not connected open the modal to connect
 		if (!appKit.getIsConnectedState()) {
@@ -42,8 +44,6 @@
 
 		// if now connected show the rest if not ignore
 		if (appKit.getIsConnectedState()) {
-			// const contributorAddress = appKit.getAddress();
-
 			const provider = appKit.getWalletProvider();
 
 			if (!provider) {
@@ -57,18 +57,67 @@
 
 				// Ensure correct network
 				await switchToTargetNetwork(ethersProvider, 'eth');
-				const contract = new ethers.Contract(
-					PUBLIC_CONTRACT_ADDRESS,
-					contractabi,
-					ethersProvider!.getSigner()
-				);
 
-				await createHackathon({
-					_hackathonId,
-					_isCrowdfunded,
-					basePrize,
-					contract
+				const reqParams = prepareRequestParameters({
+					amountInCrypto: parseFloat(basePrize),
+					builderId: 'DevBout',
+					contributorInfo: {
+						address: undefined,
+						businessName: 'KhalilSelyan',
+						companyRegistration: 'KhalilSelyan',
+						email: 'khalil@leodrive.ai',
+						firstName: 'Khalil',
+						lastName: 'Selyan',
+						phone: '',
+						taxRegistration: ''
+					},
+					createdWith: 'DevBout',
+					currency: {
+						decimals: 18,
+						hash: '',
+						id: '',
+						network: 'sepolia',
+						symbol: 'ETH',
+						type: 'ETH',
+						address: 'eth',
+						name: 'sepolia'
+					},
+					feeAddress: '0x0000000000000000000000000000000000000000',
+					feeAmountInCrypto: 0,
+					payerAddress: appKit.getAddress()!,
+					platformAddress: PUBLIC_PLATFORM_WALLET_ADDRESS,
+					platformInfo: {
+						address: undefined,
+						businessName: 'DevBout',
+						companyRegistration: 'DevBout',
+						email: 'khalilselyan@gmail.com',
+						firstName: 'Dev',
+						lastName: 'Bout',
+						logo: '',
+						name: 'DevBout',
+						phone: '',
+						taxRegistration: ''
+					},
+					totalAmountInCrypto: parseFloat(basePrize)
 				});
+
+				const reshandle = await handleRequestPayment({
+					payerAddress: appKit.getAddress()!,
+					persistRequest: true,
+					walletProvider: provider,
+					requestParameters: reqParams
+				});
+
+				// THIS RETURNED AN ERROR CYCLIC SOMETHING AFTER WAITING A BIT AND DIDNT GET TO CALL THE TRPC MUTATIONs
+				console.log(reshandle.requestId);
+				// ON CONFIRM PAYMENT DONE , CALL TRPC ENDPOINT FOR TRANSFERING MONEY FROM PLATFORM WALLET TO SMARTCONTRACT.
+
+				await $createHackathonMutation.mutateAsync({
+					hackathonId: _hackathonId,
+					isCrowdfunded: _isCrowdfunded,
+					basePrize
+				});
+
 				return true;
 			} catch (err) {
 				console.error(err);
@@ -80,12 +129,14 @@
 
 	let isDialogOpen = $state(false);
 	let hackathonId = $state(nanoid());
+	let isSubmitting = $state(false);
 	// Create superForm with improved configuration
 	const sf = superForm(data, {
 		validators: zod(hackathonSchema),
 		dataType: 'json',
 		resetForm: false,
 		onSubmit: async ({ cancel, jsonData, formData }) => {
+			isSubmitting = true;
 			// Send all data, not just tainted fields
 			const allData = Object.fromEntries(Object.entries($form));
 			if (String(formData.get('status')) !== 'DRAFT') {
@@ -95,7 +146,10 @@
 					basePrize: String(formData.get('basePrize'))
 				});
 				console.log({ hasGoneThrough });
-				if (!hasGoneThrough) cancel();
+				if (!hasGoneThrough) {
+					isSubmitting = false;
+					cancel();
+				}
 			}
 			// Set data to be posted
 			jsonData(allData);
@@ -107,6 +161,8 @@
 				trpc.hackathon.getHackathons.utils.invalidate();
 				isDialogOpen = false;
 			}
+
+			isSubmitting = false;
 		}
 	});
 
@@ -203,11 +259,13 @@
 >
 	<Dialog.Trigger
 		onclick={() => (isDialogOpen = true)}
-		class={buttonVariants({ variant: 'default' })}>Create Hackathon</Dialog.Trigger
+		class={buttonVariants({ variant: 'default' })}
 	>
+		Create Hackathon
+	</Dialog.Trigger>
 	<Dialog.Overlay
 		onclick={() => {
-			isDialogOpen = false;
+			if (!isSubmitting) isDialogOpen = false;
 		}}
 	/>
 	<Dialog.Content class="overflow-y-auto bg-popover sm:max-h-[40rem] sm:max-w-[40rem]">
@@ -293,10 +351,10 @@
 						name="basePrize"
 						bind:value={$form.basePrize}
 					/>
-					{#if $errors.basePrize}
-						<div class="text-destructive">{$errors.basePrize}</div>
-					{/if}
 				</div>
+				{#if $errors.basePrize}
+					<div class="text-destructive">{$errors.basePrize}</div>
+				{/if}
 			</div>
 
 			<div class="flex flex-col gap-2">
@@ -410,10 +468,12 @@
 					onclick={() => {
 						isDialogOpen = false;
 					}}
+					disabled={isSubmitting}
 					variant="destructive">Cancel</Button
 				>
 
-				<Button type="submit" disabled={!isValidCriteria()}>Create Hackathon</Button>
+				<Button type="submit" disabled={!isValidCriteria() || isSubmitting}>Create Hackathon</Button
+				>
 			</div>
 		</form>
 	</Dialog.Content>
