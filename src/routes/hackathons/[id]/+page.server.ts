@@ -9,6 +9,7 @@ import { zod } from 'sveltekit-superforms/adapters';
 import { fail } from '@sveltejs/kit';
 import { submissionSchema } from '$lib/zodValidations/submissionSchema';
 import { submissionService } from '$lib/server/db/submissionService';
+import { contributionSchema } from '$lib/zodValidations/contributionSchema';
 
 export const load = (async ({ params, locals }) => {
 	const hackathonDetails = await hackathonService.getHackathonDetails(params.id);
@@ -91,6 +92,34 @@ export const actions = {
 		} catch (error) {
 			console.error(error);
 			return fail(500, { form, message: 'Failed to submit project' });
+		}
+	},
+	createContribution: async (event) => {
+		const form = await superValidate(event, zod(contributionSchema));
+
+		if (!form.valid) {
+			return fail(400, { form });
+		}
+
+		if (!event.locals.user) return fail(401, { form });
+
+		try {
+			/* The code snippet you provided is a part of the `createContribution` action in your TypeScript
+	file. */
+
+			// 	const hasGoneThrough = await createContributionToHackathon({
+			// 		_hackathonId: String(form.data.hackathonId),
+			// 		amount: String(form.data.amount)
+			// 	});
+
+			// 	if (!hasGoneThrough) {
+			// 		return fail(500, { form, message: 'Failed to create contribution' });
+			// 	}
+
+			return { form };
+		} catch (error) {
+			console.error(error);
+			return fail(500, { form, message: 'Failed to create contribution' });
 		}
 	}
 };

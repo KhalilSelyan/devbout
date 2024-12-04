@@ -52,17 +52,46 @@ export async function recordContribution({
 	_contributor: string; // Contributor's address
 	contract: ethers.Contract;
 }) {
-	const tx = await contract.recordContribution(
-		_hackathonId,
-		ethers.utils.parseEther(_amount), // Convert ETH amount to Wei
-		_contributor
-	);
+	try {
+		// Add gas estimation explicitly
+		const gasEstimate = await contract.estimateGas.recordContribution(_hackathonId, _contributor, {
+			value: ethers.utils.parseEther(_amount)
+		});
 
-	console.log('Transaction sent:', tx.hash);
+		// Add 20% buffer to gas estimate
+		const gasLimit = gasEstimate.mul(120).div(100);
 
-	// Wait for the transaction to be mined
-	const receipt = await tx.wait();
-	console.log('Transaction confirmed:', receipt.transactionHash);
+		const tx = await contract.recordContribution(
+			_hackathonId, // First parameter: hackathon ID
+			_contributor, // Second parameter: contributor address
+			{
+				value: ethers.utils.parseEther(_amount), // ETH value to send
+				gasLimit
+			}
+		);
+
+		console.log('Transaction sent:', {
+			hackathonId: _hackathonId,
+			contributor: _contributor,
+			amount: _amount,
+			tx
+		});
+
+		// Wait for the transaction to be mined
+		const receipt = await tx.wait();
+		console.log('Transaction confirmed:', { receipt });
+
+		return receipt.transactionHash as string;
+	} catch (error) {
+		// Log more details about the error
+		console.error('Contract call failed:', {
+			hackathonId: _hackathonId,
+			contributor: _contributor,
+			amount: _amount,
+			error
+		});
+		throw error;
+	}
 }
 
 export enum HackathonState {

@@ -1,6 +1,7 @@
 <script lang="ts">
+	import { PUBLIC_PLATFORM_WALLET_ADDRESS } from '$env/static/public';
+	import { useWalletState } from '$lib/appKitState.svelte';
 	import { Avatar, AvatarFallback, AvatarImage } from '$lib/components/ui/avatar';
-	import { Button } from '$lib/components/ui/button';
 	import {
 		Card,
 		CardContent,
@@ -11,10 +12,13 @@
 	} from '$lib/components/ui/card';
 	import type { hackathonService } from '$lib/server/db/hackathonService';
 	import { Label } from '../ui/label';
+	import ContributionDialog from './ContributionDialog.svelte';
 
 	type Hackathon = Awaited<ReturnType<typeof hackathonService.getHackathonDetails>>;
 
 	let { hackathon }: { hackathon: Hackathon } = $props();
+
+	const walletState = useWalletState();
 </script>
 
 {#if hackathon}
@@ -48,7 +52,7 @@
 								</div>
 							</div>
 							<span class="font-bold">
-								${parseInt(contributor.amount).toLocaleString()}
+								{contributor.amount} ETH
 							</span>
 						</li>
 					{/each}
@@ -58,7 +62,15 @@
 			{/if}
 		</CardContent>
 		<CardFooter>
-			<Button variant="outline" class="w-full">Contribute to Prize Pool</Button>
+			{#if walletState.address}
+				<ContributionDialog
+					hackathonId={hackathon.id}
+					platformAddress={PUBLIC_PLATFORM_WALLET_ADDRESS}
+					userWalletAddress={walletState.address}
+				/>
+			{:else}
+				Connect your wallet
+			{/if}
 		</CardFooter>
 	</Card>
 {/if}

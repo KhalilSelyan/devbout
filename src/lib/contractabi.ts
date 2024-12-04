@@ -43,6 +43,28 @@ export const contractabi = [
 	},
 	{
 		type: 'function',
+		name: 'getParticipantInfo',
+		inputs: [
+			{ name: '_hackathonId', type: 'string', internalType: 'string' },
+			{
+				name: 'participantAddress',
+				type: 'address',
+				internalType: 'address'
+			}
+		],
+		outputs: [
+			{ name: 'isWinner', type: 'bool', internalType: 'bool' },
+			{ name: 'hasClaimedPrize', type: 'bool', internalType: 'bool' },
+			{
+				name: 'walletAddress',
+				type: 'address',
+				internalType: 'address'
+			}
+		],
+		stateMutability: 'view'
+	},
+	{
+		type: 'function',
 		name: 'hackathons',
 		inputs: [{ name: '', type: 'string', internalType: 'string' }],
 		outputs: [
@@ -83,11 +105,10 @@ export const contractabi = [
 		name: 'recordContribution',
 		inputs: [
 			{ name: '_hackathonId', type: 'string', internalType: 'string' },
-			{ name: '_amount', type: 'uint256', internalType: 'uint256' },
 			{ name: '_contributor', type: 'address', internalType: 'address' }
 		],
 		outputs: [],
-		stateMutability: 'nonpayable'
+		stateMutability: 'payable'
 	},
 	{
 		type: 'function',
