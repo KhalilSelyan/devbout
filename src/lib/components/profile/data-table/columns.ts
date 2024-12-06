@@ -6,6 +6,7 @@ type UserRequests = inferAsyncReturnType<typeof trpcServer.user.getUserRequests.
 import { createRawSnippet } from 'svelte';
 import { renderComponent, renderSnippet } from '$lib/components/ui/data-table/index.js';
 import DataTableActions from './data-table-actions.svelte';
+import DataTableCDateButton from './data-table-cdate-button.svelte';
 
 export const columns: ColumnDef<NonNullable<UserRequests>[number]>[] = [
 	{
@@ -42,7 +43,7 @@ export const columns: ColumnDef<NonNullable<UserRequests>[number]>[] = [
 			const amountCellSnippet = createRawSnippet<[string]>((getAmount) => {
 				const amount = getAmount();
 				return {
-					render: () => `<div class="text-right font-medium">${amount}</div>`
+					render: () => `<div class="text-left font-medium">${amount}</div>`
 				};
 			});
 
@@ -51,11 +52,10 @@ export const columns: ColumnDef<NonNullable<UserRequests>[number]>[] = [
 	},
 	{
 		accessorKey: 'contentData.creationDate',
-		header: () => {
-			const creationDateHeaderSnippet = createRawSnippet(() => ({
-				render: () => `<div class="text-left">Created At</div>`
-			}));
-			return renderSnippet(creationDateHeaderSnippet, '');
+		header: ({ column }) => {
+			return renderComponent(DataTableCDateButton, {
+				onclick: () => column.toggleSorting(column.getIsSorted() === 'asc')
+			});
 		},
 		cell: ({ row }) => new Date(row.original.contentData.creationDate).toLocaleString('en-UK')
 	},
