@@ -38,7 +38,7 @@ export const load = async (event) => {
 };
 
 export const actions = {
-	default: async ({ request, locals }) => {
+	profileUpdate: async ({ request, locals }) => {
 		const form = await superValidate(request, zod(profileUpdateSchema));
 
 		if (!form.valid) {
@@ -53,6 +53,24 @@ export const actions = {
 		} catch (error) {
 			console.error(error);
 			return fail(500, { form, message: 'Failed to update profile' });
+		}
+	},
+	updateUserInfo: async ({ request, locals }) => {
+		const form = await superValidate(request, zod(schema));
+
+		if (!form.valid) {
+			return fail(400, { form });
+		}
+
+		if (!locals.user?.id) return fail(401, { form });
+
+		try {
+			console.log(form.data);
+			await userService.updateUserInfo(locals.user.id, form.data);
+			return { form };
+		} catch (error) {
+			console.error(error);
+			return fail(500, { form, message: 'Failed to update user information' });
 		}
 	}
 };

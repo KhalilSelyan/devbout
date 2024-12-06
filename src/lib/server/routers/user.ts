@@ -60,7 +60,7 @@ export const userRouter = router({
 	getUserRequests: authedProcedure
 		.input(z.object({ address: z.string().nullable().optional() }))
 		.query(async ({ input }) => {
-			if (!input.address)
+			if (!input.address || input.address === '' || input.address == null) {
 				return [
 					{
 						contentData: { creationDate: '' },
@@ -69,6 +69,7 @@ export const userRouter = router({
 						requestId: ''
 					}
 				];
+			}
 			try {
 				const requests = await new RequestNetwork({
 					nodeConnectionConfig: {
@@ -96,7 +97,7 @@ export const userRouter = router({
 					userRequests ?? [
 						{
 							contentData: { creationDate: '' },
-							requestData: { state: '' },
+							requestData: { state: '', currency: { value: '' } },
 							balance: { balance: '' },
 							requestId: ''
 						}

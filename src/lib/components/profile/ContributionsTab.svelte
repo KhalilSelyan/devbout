@@ -1,17 +1,8 @@
 <script lang="ts">
 	import { Avatar, AvatarFallback, AvatarImage } from '$lib/components/ui/avatar';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
-	import { createSvelteTable } from '$lib/components/ui/data-table';
 	import { Label } from '$lib/components/ui/label';
 	import type { trpcServer } from '$lib/server/server';
-	import {
-		type ColumnFiltersState,
-		type PaginationState,
-		getCoreRowModel,
-		getFilteredRowModel,
-		getPaginationRowModel,
-		getSortedRowModel
-	} from '@tanstack/table-core';
 	import type { inferAsyncReturnType } from '@trpc/server';
 	import { columns } from './data-table/columns';
 	import DataTable from './data-table/data-table.svelte';
@@ -22,32 +13,6 @@
 		userContributions,
 		userRequests
 	}: { userContributions: Contributions; userRequests: NonNullable<UserRequests> } = $props();
-
-	let pagination = $state<PaginationState>({ pageIndex: 0, pageSize: 5 });
-	let columnFilters = $state<ColumnFiltersState>([]);
-	const table = createSvelteTable({
-		get data() {
-			return userRequests;
-		},
-		columns,
-		state: {
-			get pagination() {
-				return pagination;
-			},
-			get columnFilters() {
-				return columnFilters;
-			}
-		},
-		getCoreRowModel: getCoreRowModel(),
-		getPaginationRowModel: getPaginationRowModel(),
-		getSortedRowModel: getSortedRowModel(),
-		getFilteredRowModel: getFilteredRowModel(),
-		onPaginationChange: (updater) =>
-			(pagination = typeof updater === 'function' ? updater(pagination) : updater),
-		onColumnFiltersChange: (updater) => {
-			columnFilters = typeof updater === 'function' ? updater(columnFilters) : updater;
-		}
-	});
 </script>
 
 <div class="flex flex-col gap-4">

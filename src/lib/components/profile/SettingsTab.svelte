@@ -15,6 +15,7 @@
 	import { zod } from 'sveltekit-superforms/adapters';
 	import { trpc } from '$lib/trpc';
 	import type { User } from 'better-auth';
+	import { route } from '$lib/ROUTES';
 
 	let { form, user }: { form: SuperValidated<Infer<typeof profileUpdateSchema>>; user: User } =
 		$props();
@@ -43,7 +44,7 @@
 		<CardDescription>Update your profile information</CardDescription>
 	</CardHeader>
 	<CardContent>
-		<form class="space-y-4" use:enhance method="POST">
+		<form class="space-y-4" use:enhance action={route('profileUpdate /profile')} method="POST">
 			<div class="space-y-2">
 				<label for="bio">Bio</label>
 				<Textarea

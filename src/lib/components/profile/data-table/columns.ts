@@ -38,8 +38,7 @@ export const columns: ColumnDef<NonNullable<UserRequests>[number]>[] = [
 			return renderSnippet(amountHeaderSnippet, '');
 		},
 		cell: ({ row }) => {
-			const formatter = (val: string) =>
-				`${ethers.utils.formatUnits(val)} ${row.original.requestData.currency.value}`;
+			const formatter = (val: ethers.BigNumberish) => `${ethers.utils.formatUnits(val)}`;
 			const amountCellSnippet = createRawSnippet<[string]>((getAmount) => {
 				const amount = getAmount();
 				return {
@@ -47,7 +46,14 @@ export const columns: ColumnDef<NonNullable<UserRequests>[number]>[] = [
 				};
 			});
 
-			return renderSnippet(amountCellSnippet, formatter(row.original.balance.balance));
+			return renderSnippet(
+				amountCellSnippet,
+				formatter(
+					row.original.balance.balance === ''
+						? ethers.utils.parseEther('0')
+						: row.original.balance.balance
+				)
+			);
 		}
 	},
 	{

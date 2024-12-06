@@ -1,7 +1,7 @@
 import { db } from './index';
 import { prizePool, user } from './schema';
 import { eq } from 'drizzle-orm';
-import { type profileUpdateSchema } from '$lib/zodValidations/userSchema';
+import { type schema, type profileUpdateSchema } from '$lib/zodValidations/userSchema';
 import type { z } from 'zod';
 
 type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>;
@@ -71,5 +71,19 @@ export const userService = {
 		});
 
 		return contributions;
+	},
+	async updateUserInfo(userId: string, userInfo: z.infer<typeof schema>) {
+		return await db
+			.update(user)
+			.set({
+				...userInfo,
+				streetAddress: userInfo.address['street-address'],
+				countryName: userInfo.address['country-name'],
+				locality: userInfo.address.locality,
+				postalCode: userInfo.address['postal-code'],
+				updatedAt: new Date()
+			})
+			.where(eq(user.id, userId))
+			.returning();
 	}
 };

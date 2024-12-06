@@ -5,6 +5,8 @@
 	import { Label } from '../ui/label';
 	import { Input } from '../ui/input';
 	import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+	import { route } from '$lib/ROUTES';
+	import { Button } from '../ui/button';
 
 	// Get the form data from the page load
 	let {
@@ -27,7 +29,12 @@
 		<CardDescription>Update your user information</CardDescription>
 	</CardHeader>
 	<CardContent>
-		<form method="POST" use:enhance class="flex flex-col gap-2">
+		<form
+			method="POST"
+			use:enhance
+			action={route('updateUserInfo /profile')}
+			class="flex flex-col gap-2"
+		>
 			{#if $message}
 				<div class="rounded-md bg-muted p-4 text-muted-foreground">
 					{$message}
@@ -218,13 +225,9 @@
 			</div>
 
 			<div class="flex justify-end space-x-4">
-				<button
-					type="submit"
-					disabled={$delayed}
-					class="rounded-md bg-muted px-4 py-2 text-white hover:bg-muted-foreground focus:outline-none focus:ring-2 focus:ring-muted focus:ring-offset-2 disabled:opacity-50"
-				>
+				<Button type="submit" disabled={$delayed}>
 					{$delayed ? 'Submitting...' : 'Submit'}
-				</button>
+				</Button>
 			</div>
 		</form>
 	</CardContent>

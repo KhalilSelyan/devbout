@@ -120,19 +120,33 @@
 			{/each}
 		</Table.Header>
 		<Table.Body>
-			{#each table.getRowModel().rows as row (row.id)}
-				<Table.Row data-state={row.getIsSelected() && 'selected'}>
-					{#each row.getVisibleCells() as cell (cell.id)}
-						<Table.Cell>
-							<FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
-						</Table.Cell>
-					{/each}
+			{#if table.getRowModel().rows.length === 0}
+				<Table.Row>
+					<Table.Cell colspan={columns.length} class="h-24 text-center">
+						No requests available.
+					</Table.Cell>
 				</Table.Row>
+			{:else if table.getRowModel().rows.length === 1 && (table.getRowModel().rows[0].original as { requestId: string }).requestId === ''}
+				<Table.Row>
+					<Table.Cell colspan={columns.length} class="h-24 text-center">
+						No requests available.
+					</Table.Cell>
+				</Table.Row>
+			{:else if table.getRowModel().rows.length > 0}
+				{#each table.getRowModel().rows as row (row.id)}
+					<Table.Row data-state={row.getIsSelected() && 'selected'}>
+						{#each row.getVisibleCells() as cell (cell.id)}
+							<Table.Cell>
+								<FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
+							</Table.Cell>
+						{/each}
+					</Table.Row>
+				{/each}
 			{:else}
 				<Table.Row>
 					<Table.Cell colspan={columns.length} class="h-24 text-center">No results.</Table.Cell>
 				</Table.Row>
-			{/each}
+			{/if}
 		</Table.Body>
 	</Table.Root>
 	<div class="flex items-center justify-between space-x-4 pt-4">

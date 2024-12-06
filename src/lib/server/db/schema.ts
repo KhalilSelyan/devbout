@@ -42,7 +42,18 @@ export const user = pgTable(
 		skills: json('skills').$type<Record<string, string>>(),
 		xpPoints: integer('xpPoints').default(0),
 		githubUsername: text('githubUsername'),
-		discord: text('discord')
+		discord: text('discord'),
+		// New fields added
+		firstName: text('firstName'),
+		lastName: text('lastName'),
+		businessName: text('businessName'),
+		phone: text('phone'),
+		taxRegistration: text('taxRegistration'),
+		// Address fields
+		streetAddress: text('street_address'),
+		locality: text('locality'),
+		postalCode: text('postal_code'),
+		countryName: text('country_name')
 	},
 	(table) => ({
 		emailIdx: index('email_idx').on(table.email)
@@ -65,7 +76,7 @@ export const session = pgTable('session', {
 	userAgent: text('userAgent'),
 	userId: text('userId')
 		.notNull()
-		.references(() => user.id)
+		.references(() => user.id, { onDelete: 'cascade' })
 });
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -81,7 +92,7 @@ export const account = pgTable('account', {
 	providerId: text('providerId').notNull(),
 	userId: text('userId')
 		.notNull()
-		.references(() => user.id),
+		.references(() => user.id, { onDelete: 'cascade' }),
 	accessToken: text('accessToken'),
 	refreshToken: text('refreshToken'),
 	idToken: text('idToken'),
@@ -111,7 +122,7 @@ export const hackathon = pgTable(
 		id: text('id').primaryKey(),
 		organizerId: text('organizerId')
 			.notNull()
-			.references(() => user.id),
+			.references(() => user.id, { onDelete: 'cascade' }),
 		name: text('name').notNull(),
 		description: text('description').notNull(),
 		startDate: timestamp('startDate').notNull(),
@@ -148,7 +159,7 @@ export const team = pgTable('team', {
 	id: text('id').primaryKey(),
 	hackathonId: text('hackathonId')
 		.notNull()
-		.references(() => hackathon.id),
+		.references(() => hackathon.id, { onDelete: 'cascade' }),
 	name: text('name').notNull(),
 	description: text('description'),
 	isWinner: boolean('isWinner').default(false),
@@ -171,10 +182,10 @@ export const teamMember = pgTable('teamMember', {
 	id: text('id').primaryKey(),
 	teamId: text('teamId')
 		.notNull()
-		.references(() => team.id),
+		.references(() => team.id, { onDelete: 'cascade' }),
 	userId: text('userId')
 		.notNull()
-		.references(() => user.id),
+		.references(() => user.id, { onDelete: 'cascade' }),
 	role: teamMemberRoleEnum('role').notNull(),
 	joinedAt: timestamp('joinedAt').notNull().defaultNow()
 });
@@ -194,10 +205,10 @@ export const submission = pgTable('submission', {
 	id: text('id').primaryKey(),
 	hackathonId: text('hackathonId')
 		.notNull()
-		.references(() => hackathon.id),
+		.references(() => hackathon.id, { onDelete: 'cascade' }),
 	teamId: text('teamId')
 		.notNull()
-		.references(() => team.id),
+		.references(() => team.id, { onDelete: 'cascade' }),
 	projectName: text('projectName').notNull(),
 	description: text('description').notNull(),
 	submissionUrl: text('submissionUrl'),
@@ -221,10 +232,10 @@ export const prizePool = pgTable('prizePool', {
 	id: text('id').primaryKey(),
 	hackathonId: text('hackathonId')
 		.notNull()
-		.references(() => hackathon.id),
+		.references(() => hackathon.id, { onDelete: 'cascade' }),
 	userId: text('userId')
 		.notNull()
-		.references(() => user.id),
+		.references(() => user.id, { onDelete: 'cascade' }),
 	amount: text('amount').notNull(),
 	transactionHash: text('transactionHash'),
 	contributedAt: timestamp('contributedAt').notNull().defaultNow()
@@ -262,10 +273,10 @@ export const userBadge = pgTable('userBadge', {
 	id: text('id').primaryKey(),
 	userId: text('userId')
 		.notNull()
-		.references(() => user.id),
+		.references(() => user.id, { onDelete: 'cascade' }),
 	badgeId: text('badgeId')
 		.notNull()
-		.references(() => badge.id),
+		.references(() => badge.id, { onDelete: 'cascade' }),
 	earnedAt: timestamp('earnedAt').notNull().defaultNow()
 });
 
@@ -284,10 +295,10 @@ export const teamJoinRequest = pgTable('teamJoinRequest', {
 	id: text('id').primaryKey(),
 	teamId: text('teamId')
 		.notNull()
-		.references(() => team.id),
+		.references(() => team.id, { onDelete: 'cascade' }),
 	userId: text('userId')
 		.notNull()
-		.references(() => user.id),
+		.references(() => user.id, { onDelete: 'cascade' }),
 	status: teamJoinRequestStatusEnum('status').notNull().default('PENDING'),
 	message: text('message'),
 	createdAt: timestamp('createdAt').notNull().defaultNow(),
@@ -309,10 +320,10 @@ export const teamPrize = pgTable('teamPrize', {
 	id: text('id').primaryKey(),
 	hackathonId: text('hackathonId')
 		.notNull()
-		.references(() => hackathon.id),
+		.references(() => hackathon.id, { onDelete: 'cascade' }),
 	teamId: text('teamId')
 		.notNull()
-		.references(() => team.id),
+		.references(() => team.id, { onDelete: 'cascade' }),
 	amount: text('amount').notNull(), // Prize amount for this team
 	hasClaimed: boolean('hasClaimed').notNull().default(false),
 	claimedAt: timestamp('claimedAt'),
@@ -335,10 +346,10 @@ export const prizeClaim = pgTable('prizeClaim', {
 	id: text('id').primaryKey(),
 	teamPrizeId: text('teamPrizeId')
 		.notNull()
-		.references(() => teamPrize.id),
+		.references(() => teamPrize.id, { onDelete: 'cascade' }),
 	userId: text('userId')
 		.notNull()
-		.references(() => user.id),
+		.references(() => user.id, { onDelete: 'cascade' }),
 	amount: text('amount').notNull(),
 	transactionHash: text('transactionHash'),
 	claimedAt: timestamp('claimedAt').notNull().defaultNow()
