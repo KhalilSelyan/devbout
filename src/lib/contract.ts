@@ -150,6 +150,7 @@ export async function executeBatchPayments({
 	contract
 }: {
 	_hackathonId: string;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	requestDetails: any[];
 	feeAddress: string;
 	skipFeeUSDLimit: boolean;
