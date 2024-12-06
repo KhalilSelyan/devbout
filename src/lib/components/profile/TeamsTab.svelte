@@ -171,36 +171,38 @@
 										{#if $pendingRequests.data?.length}
 											<ul class="space-y-2">
 												{#each $pendingRequests.data as request}
-													<li class="flex items-center justify-between rounded-lg border p-2">
-														<div class="flex flex-col gap-2 font-mono text-xs">
-															<div class="flex items-center gap-2">
-																<p class="text-xs font-medium">{request.user.name} -</p>
-																<p class="text-xs font-medium">{request.user.email}</p>
+													{#if team.hackathonId === hackathon.id && request.teamId == team.id}
+														<li class="flex items-center justify-between rounded-lg border p-2">
+															<div class="flex flex-col gap-2 font-mono text-xs">
+																<div class="flex items-center gap-2">
+																	<p class="text-xs font-medium">{request.user.name} -</p>
+																	<p class="text-xs font-medium">{request.user.email}</p>
+																</div>
+																<div class="flex items-center gap-2 text-muted-foreground">
+																	{#if request.message}
+																		<p>Message:</p>
+																		<p class="">{request.message}</p>
+																	{/if}
+																</div>
 															</div>
-															<div class="flex items-center gap-2 text-muted-foreground">
-																{#if request.message}
-																	<p>Message:</p>
-																	<p class="">{request.message}</p>
-																{/if}
+															<div class="flex space-x-2">
+																<Button
+																	size="sm"
+																	variant="default"
+																	onclick={() => handleJoinRequest(request.id, 'ACCEPTED')}
+																>
+																	<Check class="h-4 w-4" />
+																</Button>
+																<Button
+																	size="sm"
+																	variant="destructive"
+																	onclick={() => handleJoinRequest(request.id, 'REJECTED')}
+																>
+																	<X class="h-4 w-4" />
+																</Button>
 															</div>
-														</div>
-														<div class="flex space-x-2">
-															<Button
-																size="sm"
-																variant="default"
-																onclick={() => handleJoinRequest(request.id, 'ACCEPTED')}
-															>
-																<Check class="h-4 w-4" />
-															</Button>
-															<Button
-																size="sm"
-																variant="destructive"
-																onclick={() => handleJoinRequest(request.id, 'REJECTED')}
-															>
-																<X class="h-4 w-4" />
-															</Button>
-														</div>
-													</li>
+														</li>
+													{/if}
 												{/each}
 											</ul>
 										{:else}
@@ -267,7 +269,7 @@
 			<CardContent>
 				{#if $userHackathons.data}
 					<ul class="space-y-2">
-						{#each $userHackathons.data.filter((h) => h.status === 'ONGOING') as hackathon}
+						{#each $userHackathons.data.filter((h) => !['DRAFT', 'COMPLETED'].includes(h.status)) as hackathon}
 							{#each hackathon.teams as team}
 								<li class="flex items-center justify-between">
 									<div>
