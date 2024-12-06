@@ -12,6 +12,7 @@
 	import { PUBLIC_CONTRACT_ADDRESS } from '$env/static/public';
 	import { contractabi } from '$lib/contractabi';
 	import { appKit } from '$lib/appKit';
+	import { useWalletState } from '$lib/appKitState.svelte';
 
 	type Teams = NonNullable<Awaited<ReturnType<typeof teamService.getHackathonTeams>>>;
 	type Hackathon = Awaited<ReturnType<typeof hackathonService.getHackathonDetails>>;
@@ -21,7 +22,69 @@
 
 	let teamAddresses = trpc.team.getTeamMemberWalletAddresses.mutation();
 	let announceWinnerMutation = trpc.wallet.announceWinners.mutation();
+	const walletState = useWalletState();
+
+	const updateHackathonStateInContract = async ({
+		hackathon,
+		newStatus,
+		stateMapping
+	}: {
+		newStatus: string;
+		hackathon: NonNullable<Hackathon>;
+		stateMapping: {
+			OPEN: HackathonState;
+			ONGOING: HackathonState;
+			JUDGING: HackathonState;
+			COMPLETED: HackathonState;
+		};
+	}) => {
+		if (walletState.isWalletConnected) {
+			const provider = appKit.getWalletProvider();
+
+			if (!provider) {
+				console.error('Wallet provider is not available.');
+				return false;
+			}
+
+			try {
+				// Initialize ethers.js provider
+				const ethersProvider = new ethers.providers.Web3Provider(provider);
+
+				// Ensure correct network
+				await switchToTargetNetwork(ethersProvider, 'eth');
+				const contract = new ethers.Contract(
+					PUBLIC_CONTRACT_ADDRESS,
+					contractabi,
+					ethersProvider!.getSigner()
+				);
+
+				const mappedState = stateMapping[newStatus as Exclude<typeof hackathon.status, 'DRAFT'>];
+				try {
+					await updateHackathonState({
+						_hackathonId: hackathon.id,
+						_newState: mappedState,
+						contract
+					});
+				} catch (error) {
+					console.error(error);
+					return false;
+				}
+
+				return true;
+			} catch (err) {
+				console.error(err);
+				return false;
+			}
+		}
+	};
+
 	async function confirmSelection() {
+		const stateMapping = {
+			OPEN: HackathonState.OPEN,
+			ONGOING: HackathonState.ONGOING,
+			JUDGING: HackathonState.JUDGING,
+			COMPLETED: HackathonState.COMPLETED
+		};
 		if (selectedWinningTeam && hackathon) {
 			toast.success(`Winning team confirmed: ${selectedWinningTeam.name}`);
 
@@ -45,28 +108,11 @@
 					}
 				});
 
-				// if (amountOfSuccesses === selectedTeamAddresses.length) {
-				// 	const provider = appKit.getWalletProvider();
-				// 	if (!provider) {
-				// 		console.error('Wallet provider is not available.');
-				// 		toast.error('Wallet provider is not available.');
-				// 		return false;
-				// 	}
-				// 	const ethersProvider = new ethers.providers.Web3Provider(provider);
-				// 	// Ensure correct network
-				// 	await switchToTargetNetwork(ethersProvider, 'eth');
-
-				// 	const contract = new ethers.Contract(
-				// 		PUBLIC_CONTRACT_ADDRESS,
-				// 		contractabi,
-				// 		ethersProvider.getSigner()
-				// 	);
-				// 	await updateHackathonState({
-				// 		_hackathonId: hackathon.id,
-				// 		_newState: HackathonState.COMPLETED,
-				// 		contract
-				// 	});
-				// }
+				await updateHackathonStateInContract({
+					hackathon,
+					newStatus: 'COMPLETED',
+					stateMapping
+				});
 			} catch (error) {
 				console.error('Failed to announce winner:', error);
 				toast.error('Failed to announce winner');
