@@ -1,3 +1,5 @@
+import { user } from '$lib/server/db/schema';
+import { eq } from 'drizzle-orm';
 import { profileUpdateSchema, schema } from '$lib/zodValidations/userSchema';
 import { superValidate } from 'sveltekit-superforms';
 import { fail, redirect } from '@sveltejs/kit';
@@ -5,6 +7,7 @@ import { userService } from '$lib/server/db/userService';
 import { route } from '$lib/ROUTES.js';
 import { zod } from 'sveltekit-superforms/adapters';
 import { trpcServer } from '$lib/server/server.js';
+import { db } from '$lib/server/db/index.js';
 
 export const load = async (event) => {
 	if (!event.locals.session) {
@@ -13,12 +16,24 @@ export const load = async (event) => {
 	const form = await superValidate(zod(profileUpdateSchema));
 	const formdata = await superValidate(zod(schema));
 	const userProfileData = await trpcServer.user.getProfile.ssr(event.locals.session.userId, event);
+	const userContributions = await trpcServer.user.getContributions.ssr(event);
+
+	const currentUser = await db.query.user.findFirst({
+		where: eq(user.id, event.locals.session.userId)
+	});
+
+	const userRequests = await trpcServer.user.getUserRequests.ssr(
+		{ address: currentUser?.walletAddress },
+		event
+	);
 
 	return {
 		form,
 		formdata,
 		user: event.locals.user,
-		userProfileData
+		userProfileData,
+		userContributions,
+		userRequests: userRequests
 	};
 };
 

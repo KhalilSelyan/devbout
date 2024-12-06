@@ -1,5 +1,5 @@
 import { db } from './index';
-import { user } from './schema';
+import { prizePool, user } from './schema';
 import { eq } from 'drizzle-orm';
 import { type profileUpdateSchema } from '$lib/zodValidations/userSchema';
 import type { z } from 'zod';
@@ -60,5 +60,16 @@ export const userService = {
 			})
 			.where(eq(user.id, userId))
 			.returning();
+	},
+	async getAllUserContributions(userId: string) {
+		const contributions = await db.query.prizePool.findMany({
+			where: eq(prizePool.userId, userId),
+			with: {
+				hackathon: true,
+				contributor: true
+			}
+		});
+
+		return contributions;
 	}
 };

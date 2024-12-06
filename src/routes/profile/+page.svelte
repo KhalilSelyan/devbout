@@ -9,4 +9,6 @@
 	form={data.form}
 	formdata={data.formdata}
 	userProfileData={data.userProfileData}
+	userContributions={data.userContributions}
+	userRequests={data.userRequests}
 />

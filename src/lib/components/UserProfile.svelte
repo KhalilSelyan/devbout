@@ -13,11 +13,13 @@
 	import TeamsTab from './profile/TeamsTab.svelte';
 	import UserInfoTab from './profile/UserInfoTab.svelte';
 
-	let { user, form, formdata, userProfileData } = $props<{
+	let { user, form, formdata, userProfileData, userContributions, userRequests } = $props<{
 		user: User | undefined;
 		form: SuperValidated<Infer<typeof profileUpdateSchema>>;
 		formdata: SuperValidated<Infer<typeof schema>>;
 		userProfileData: inferAsyncReturnType<typeof trpcServer.user.getProfile.ssr>;
+		userContributions: inferAsyncReturnType<typeof trpcServer.user.getContributions.ssr>;
+		userRequests: inferAsyncReturnType<typeof trpcServer.user.getUserRequests.ssr>;
 	}>();
 
 	// Load user's profile data
@@ -54,7 +56,7 @@
 			<TeamsTab {user} />
 		</TabsContent>
 		<TabsContent value="contributions">
-			<ContributionsTab {user} />
+			<ContributionsTab {userRequests} {userContributions} />
 		</TabsContent>
 		<TabsContent value="info">
 			<UserInfoTab {formdata} />
