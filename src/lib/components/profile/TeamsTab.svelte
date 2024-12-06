@@ -238,7 +238,7 @@
 									onclick={async () => {
 										// Drop contract stuff here for adding participants
 										const hasGoneThrough = await addParticipantBeforeCreateJoinTeamInDb({
-											_hackathonId: ''
+											_hackathonId: request.team.hackathonId
 										});
 										if (!hasGoneThrough) return;
 										await handleJoinRequest(request.id, 'CONFIRMED');
