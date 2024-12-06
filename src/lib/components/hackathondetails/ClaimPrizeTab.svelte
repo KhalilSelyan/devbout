@@ -4,7 +4,11 @@
 	import { useWalletState } from '$lib/appKitState.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Label } from '$lib/components/ui/label';
-	import { executeBatchPayments, switchToTargetNetwork } from '$lib/contract';
+	import {
+		executeBatchPayments,
+		switchToTargetNetwork,
+		claimPrize as claimContractPrize
+	} from '$lib/contract';
 	import { contractabi } from '$lib/contractabi';
 	import { prepareRequestParameters } from '$lib/rn-utils/req';
 	import type { hackathonService } from '$lib/server/db/hackathonService';
@@ -149,31 +153,41 @@
 				const amounts = new Array<number>(recipients.length).fill(memberPrize);
 
 				// Create RequestDetail objects
-				const requestDetails = recipients
-					.map((recipient, index) => {
-						if (!recipient) return;
-						return {
-							recipient,
-							requestAmount: ethers.utils.parseEther(amounts[index].toString()),
-							path: [],
-							paymentReference: ethers.utils.hexlify(ethers.utils.toUtf8Bytes(_paymentRefs[index])),
-							feeAmount: ethers.BigNumber.from(0),
-							maxToSpend: ethers.BigNumber.from(0),
-							maxRateTimespan: ethers.BigNumber.from(0)
-						};
-					})
-					.filter((t) => t != undefined);
+				// const requestDetails = recipients
+				// 	.map((recipient, index) => {
+				// 		if (!recipient) return;
+				// 		return {
+				// 			recipient,
+				// 			requestAmount: ethers.utils.parseUnits(amounts[index].toString(), 18),
+				// 			path: [],
+				// 			paymentReference: ethers.utils.hexlify(ethers.utils.toUtf8Bytes(_paymentRefs[index])),
+				// 			feeAmount: ethers.BigNumber.from(0),
+				// 			maxToSpend: ethers.BigNumber.from(0),
+				// 			maxRateTimespan: ethers.BigNumber.from(0)
+				// 		};
+				// 	})
+				// 	.filter((t) => t != undefined);
 
-				const batchPaymentProps: Parameters<typeof executeBatchPayments>[0] = {
+				// const batchPaymentProps: Parameters<typeof executeBatchPayments>[0] = {
+				// 	_hackathonId: hackathon.id,
+				// 	requestDetails: requestDetails,
+				// 	skipFeeUSDLimit: false,
+				// 	feeAddress: '0x0000000000000000000000000000000000000000',
+				// 	contract
+				// };
+
+				// const tet = await executeBatchPayments(batchPaymentProps);
+
+				const claimPrizeProps: Parameters<typeof claimContractPrize>[0] = {
 					_hackathonId: hackathon.id,
-					requestDetails: requestDetails,
-					skipFeeUSDLimit: false,
-					feeAddress: '0x0000000000000000000000000000000000000000',
+					_winnerAddress: recipients[0],
+					_paymentRef: ethers.utils.hexlify(ethers.utils.toUtf8Bytes(_paymentRefs[0])),
+					_wonAmount: ethers.utils.parseUnits(amounts[0].toString(), 18),
 					contract
 				};
 
-				const tet = await executeBatchPayments(batchPaymentProps);
-				console.log(tet);
+				await claimContractPrize(claimPrizeProps);
+
 				return true;
 			} catch (err) {
 				console.error('Failed to claim prize:', err);

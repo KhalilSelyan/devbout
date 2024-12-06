@@ -3,7 +3,7 @@
 	import { Tabs, TabsContent, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
 	import type { trpcServer } from '$lib/server/server';
 	import { trpc } from '$lib/trpc';
-	import type { profileUpdateSchema } from '$lib/zodValidations/userSchema';
+	import type { profileUpdateSchema, schema } from '$lib/zodValidations/userSchema';
 	import type { inferAsyncReturnType } from '@trpc/server';
 	import type { User } from 'better-auth';
 	import { type Infer, type SuperValidated } from 'sveltekit-superforms';
@@ -11,10 +11,12 @@
 	import OverviewTab from './profile/OverviewTab.svelte';
 	import SettingsTab from './profile/SettingsTab.svelte';
 	import TeamsTab from './profile/TeamsTab.svelte';
+	import UserInfoTab from './profile/UserInfoTab.svelte';
 
-	let { user, form, userProfileData } = $props<{
+	let { user, form, formdata, userProfileData } = $props<{
 		user: User | undefined;
 		form: SuperValidated<Infer<typeof profileUpdateSchema>>;
+		formdata: SuperValidated<Infer<typeof schema>>;
 		userProfileData: inferAsyncReturnType<typeof trpcServer.user.getProfile.ssr>;
 	}>();
 
@@ -41,6 +43,7 @@
 			<TabsTrigger value="overview">Overview</TabsTrigger>
 			<TabsTrigger value="teams">Teams</TabsTrigger>
 			<TabsTrigger value="contributions">Contributions</TabsTrigger>
+			<TabsTrigger value="info">User Info</TabsTrigger>
 			<TabsTrigger value="settings">Settings</TabsTrigger>
 		</TabsList>
 
@@ -52,6 +55,9 @@
 		</TabsContent>
 		<TabsContent value="contributions">
 			<ContributionsTab {user} />
+		</TabsContent>
+		<TabsContent value="info">
+			<UserInfoTab {formdata} />
 		</TabsContent>
 		<TabsContent value="settings">
 			<SettingsTab {form} {user} />

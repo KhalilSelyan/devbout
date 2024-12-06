@@ -176,6 +176,29 @@ export async function executeBatchPayments({
 	return receipt.transactionHash;
 }
 
+// Function for a winner to claim their prize
+export async function claimPrize({
+	_hackathonId,
+	_winnerAddress,
+	_wonAmount,
+	_paymentRef,
+	contract
+}: {
+	_hackathonId: string;
+	_winnerAddress: string;
+	_wonAmount: ethers.BigNumber; // Prize amount in ETH
+	_paymentRef: string; // Reference for the payment
+	contract: ethers.Contract;
+}) {
+	const tx = await contract.claimPrize(_hackathonId, _winnerAddress, _wonAmount, _paymentRef);
+
+	console.log('Transaction sent:', tx.hash);
+
+	// Wait for the transaction to be mined
+	const receipt = await tx.wait();
+	console.log('Transaction confirmed:', receipt.transactionHash);
+}
+
 // Helper to switch to the target network
 export async function switchToTargetNetwork(
 	ethersProvider: ethers.providers.Web3Provider,

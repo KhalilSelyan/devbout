@@ -7,6 +7,11 @@
 	import { Button } from '../ui/button';
 	import type { hackathonService } from '$lib/server/db/hackathonService';
 	import { trpc } from '$lib/trpc';
+	import { HackathonState, switchToTargetNetwork, updateHackathonState } from '$lib/contract';
+	import { ethers } from 'ethers';
+	import { PUBLIC_CONTRACT_ADDRESS } from '$env/static/public';
+	import { contractabi } from '$lib/contractabi';
+	import { appKit } from '$lib/appKit';
 
 	type Teams = NonNullable<Awaited<ReturnType<typeof teamService.getHackathonTeams>>>;
 	type Hackathon = Awaited<ReturnType<typeof hackathonService.getHackathonDetails>>;
@@ -23,7 +28,7 @@
 			let selectedTeamAddresses = await $teamAddresses.mutateAsync({
 				teamId: selectedWinningTeam.id
 			});
-
+			let amountOfSuccesses = 0;
 			try {
 				selectedTeamAddresses.map(async (member) => {
 					if (member.user.walletAddress && member.user.walletAddress !== '') {
@@ -32,12 +37,36 @@
 							winningParticipantAddress: member.user.walletAddress
 						});
 						toast.success(`Winner ${member.user.name} announced successfully!`);
+						amountOfSuccesses++;
 					} else {
 						toast.warning(
 							`${member.user.name} doesn't have his walletAddress saved in the db, contact them separately.`
 						);
 					}
 				});
+
+				// if (amountOfSuccesses === selectedTeamAddresses.length) {
+				// 	const provider = appKit.getWalletProvider();
+				// 	if (!provider) {
+				// 		console.error('Wallet provider is not available.');
+				// 		toast.error('Wallet provider is not available.');
+				// 		return false;
+				// 	}
+				// 	const ethersProvider = new ethers.providers.Web3Provider(provider);
+				// 	// Ensure correct network
+				// 	await switchToTargetNetwork(ethersProvider, 'eth');
+
+				// 	const contract = new ethers.Contract(
+				// 		PUBLIC_CONTRACT_ADDRESS,
+				// 		contractabi,
+				// 		ethersProvider.getSigner()
+				// 	);
+				// 	await updateHackathonState({
+				// 		_hackathonId: hackathon.id,
+				// 		_newState: HackathonState.COMPLETED,
+				// 		contract
+				// 	});
+				// }
 			} catch (error) {
 				console.error('Failed to announce winner:', error);
 				toast.error('Failed to announce winner');

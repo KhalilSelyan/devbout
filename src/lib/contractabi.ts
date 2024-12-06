@@ -1,5 +1,6 @@
 export const contractabi = [
 	{ type: 'constructor', inputs: [], stateMutability: 'nonpayable' },
+	{ type: 'receive', stateMutability: 'payable' },
 	{
 		type: 'function',
 		name: 'announceWinner',
@@ -32,8 +33,7 @@ export const contractabi = [
 				internalType: 'address'
 			},
 			{ name: 'wonAmount', type: 'uint256', internalType: 'uint256' },
-			{ name: 'paymentRef', type: 'bytes', internalType: 'bytes' },
-			{ name: 'ethFeeProxy', type: 'address', internalType: 'address' }
+			{ name: 'paymentRef', type: 'bytes', internalType: 'bytes' }
 		],
 		outputs: [],
 		stateMutability: 'payable'
@@ -47,6 +47,13 @@ export const contractabi = [
 		],
 		outputs: [],
 		stateMutability: 'payable'
+	},
+	{
+		type: 'function',
+		name: 'ethFeeProxy',
+		inputs: [],
+		outputs: [{ name: '', type: 'address', internalType: 'address' }],
+		stateMutability: 'view'
 	},
 	{
 		type: 'function',
@@ -443,6 +450,5 @@ export const contractabi = [
 		type: 'error',
 		name: 'OwnableUnauthorizedAccount',
 		inputs: [{ name: 'account', type: 'address', internalType: 'address' }]
-	},
-	{ type: 'error', name: 'ReentrancyGuardReentrantCall', inputs: [] }
+	}
 ];

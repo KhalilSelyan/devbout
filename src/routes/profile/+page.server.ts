@@ -1,4 +1,4 @@
-import { profileUpdateSchema } from '$lib/zodValidations/userSchema';
+import { profileUpdateSchema, schema } from '$lib/zodValidations/userSchema';
 import { superValidate } from 'sveltekit-superforms';
 import { fail, redirect } from '@sveltejs/kit';
 import { userService } from '$lib/server/db/userService';
@@ -11,10 +11,12 @@ export const load = async (event) => {
 		redirect(307, route('/'));
 	}
 	const form = await superValidate(zod(profileUpdateSchema));
+	const formdata = await superValidate(zod(schema));
 	const userProfileData = await trpcServer.user.getProfile.ssr(event.locals.session.userId, event);
 
 	return {
 		form,
+		formdata,
 		user: event.locals.user,
 		userProfileData
 	};

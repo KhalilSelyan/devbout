@@ -4,4 +4,9 @@
 	let { data } = $props();
 </script>
 
-<UserProfile user={data.user} form={data.form} userProfileData={data.userProfileData} />
+<UserProfile
+	user={data.user}
+	form={data.form}
+	formdata={data.formdata}
+	userProfileData={data.userProfileData}
+/>
