@@ -114,6 +114,7 @@
 	const joinRequestForm = superForm(
 		{
 			teamId: '',
+			hackathonId,
 			message: ''
 		},
 		{
@@ -123,6 +124,7 @@
 			onUpdated: ({ form }) => {
 				if (form.valid) {
 					isDialogOpen = false;
+					$updateWalletInfo.mutate({ walletAddress: walletState.address ?? '' });
 				}
 			}
 		}
@@ -262,6 +264,8 @@
 								{/if}
 							</div>
 						{/if}
+
+						<input type="hidden" name="hackathonId" value={hackathonId} />
 
 						<div class="flex justify-end gap-2">
 							<Button

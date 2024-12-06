@@ -9,5 +9,6 @@ export const teamSchema = z.object({
 
 export const teamJoinRequestSchema = z.object({
 	teamId: z.string(),
+	hackathonId: z.string(),
 	message: z.string().optional()
 });

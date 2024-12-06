@@ -50,7 +50,7 @@ export const teamService = {
 	},
 
 	// Request to join a team
-	async requestToJoinTeam(teamId: string, userId: string, message?: string) {
+	async requestToJoinTeam(teamId: string, userId: string, hackathonId: string, message?: string) {
 		// Check if user already has a pending request
 		const existingRequest = await db.query.teamJoinRequest.findFirst({
 			where: and(
@@ -74,13 +74,13 @@ export const teamService = {
 		}
 
 		const existingMembership = await db.query.teamMember.findFirst({
-			where: eq(teamMember.userId, userId),
+			where: and(eq(teamMember.userId, userId), eq(teamMember.teamId, teamJoinRequest.teamId)),
 			with: {
 				team: true
 			}
 		});
 
-		if (existingMembership) {
+		if (existingMembership && existingMembership.team.hackathonId === hackathonId) {
 			throw new Error('User is already in a team for this hackathon');
 		}
 

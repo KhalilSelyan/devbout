@@ -12,15 +12,18 @@
 	import SettingsTab from './profile/SettingsTab.svelte';
 	import TeamsTab from './profile/TeamsTab.svelte';
 	import UserInfoTab from './profile/UserInfoTab.svelte';
+	import HackathonsTab from './profile/HackathonsTab.svelte';
 
-	let { user, form, formdata, userProfileData, userContributions, userRequests } = $props<{
-		user: User | undefined;
-		form: SuperValidated<Infer<typeof profileUpdateSchema>>;
-		formdata: SuperValidated<Infer<typeof schema>>;
-		userProfileData: inferAsyncReturnType<typeof trpcServer.user.getProfile.ssr>;
-		userContributions: inferAsyncReturnType<typeof trpcServer.user.getContributions.ssr>;
-		userRequests: inferAsyncReturnType<typeof trpcServer.user.getUserRequests.ssr>;
-	}>();
+	let { user, form, formdata, userProfileData, userContributions, userRequests, userHackathons } =
+		$props<{
+			user: User | undefined;
+			form: SuperValidated<Infer<typeof profileUpdateSchema>>;
+			formdata: SuperValidated<Infer<typeof schema>>;
+			userProfileData: inferAsyncReturnType<typeof trpcServer.user.getProfile.ssr>;
+			userContributions: inferAsyncReturnType<typeof trpcServer.user.getContributions.ssr>;
+			userRequests: inferAsyncReturnType<typeof trpcServer.user.getUserRequests.ssr>;
+			userHackathons: inferAsyncReturnType<typeof trpcServer.hackathon.getUserHackathons.ssr>;
+		}>();
 
 	// Load user's profile data
 	let userProfile = trpc.user.getProfile.query(user.id, { initialData: userProfileData });
@@ -45,6 +48,7 @@
 			<TabsTrigger value="overview">Overview</TabsTrigger>
 			<TabsTrigger value="teams">Teams</TabsTrigger>
 			<TabsTrigger value="contributions">Contributions</TabsTrigger>
+			<TabsTrigger value="hackathons">Hackathons</TabsTrigger>
 			<TabsTrigger value="info">User Info</TabsTrigger>
 			<TabsTrigger value="settings">Settings</TabsTrigger>
 		</TabsList>
@@ -57,6 +61,9 @@
 		</TabsContent>
 		<TabsContent value="contributions">
 			<ContributionsTab {userRequests} {userContributions} />
+		</TabsContent>
+		<TabsContent value="hackathons">
+			<HackathonsTab {userHackathons} />
 		</TabsContent>
 		<TabsContent value="info">
 			<UserInfoTab {formdata} />

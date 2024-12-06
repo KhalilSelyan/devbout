@@ -35,29 +35,35 @@
 	let currentTab = $state('overview');
 
 	const setCurrentTab = (tab: string) => {
-		if (['overview', 'teams', 'submissions', 'contributors'].includes(tab)) currentTab = tab;
+		if (
+			['overview', 'teams', 'submissions', 'contributors', 'winSelection', 'claimPrize'].includes(
+				tab
+			)
+		)
+			currentTab = tab;
 	};
 
-	let isOrganizer = $state(user?.id === $hackathonQuery.data?.organizerId);
-	let isJudgingPhase = $state($hackathonQuery.data?.status === 'JUDGING');
-	let isHackathonCompleted = $state($hackathonQuery.data?.status === 'COMPLETED');
-	let isMemberOfWinningTeam = $state(
+	let isOrganizer = $derived(user?.id === $hackathonQuery.data?.organizerId);
+	let isJudgingPhase = $derived($hackathonQuery.data?.status === 'JUDGING');
+	let isHackathonCompleted = $derived($hackathonQuery.data?.status === 'COMPLETED');
+	let isMemberOfWinningTeam = $derived(
 		user &&
 			teams.find(
 				(team) => team.isWinner && team.members.find((member) => member.userId === user.id)
 			)
 	);
+	let queryData = $derived($hackathonQuery.data);
 </script>
 
 <div class="min-h-screen bg-gray-100">
 	<header class="bg-white shadow">
 		<div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-			<h1 class="text-3xl font-bold text-gray-900">{$hackathonQuery.data?.name}</h1>
+			<h1 class="text-3xl font-bold text-gray-900">{queryData?.name}</h1>
 			<div class="mt-2 flex items-center space-x-2">
-				<Badge variant={$hackathonQuery.data?.status === 'ONGOING' ? 'default' : 'secondary'}>
-					{$hackathonQuery.data?.status}
+				<Badge variant={queryData?.status === 'ONGOING' ? 'default' : 'secondary'}>
+					{queryData?.status}
 				</Badge>
-				<Badge variant="outline">{$hackathonQuery.data?.fundingType}</Badge>
+				<Badge variant="outline">{queryData?.fundingType}</Badge>
 			</div>
 		</div>
 	</header>
@@ -76,25 +82,25 @@
 				{/if}
 			</TabsList>
 			<TabsContent value="overview">
-				<OverviewTab {user} hackathon={$hackathonQuery.data} {setCurrentTab} />
+				<OverviewTab {user} hackathon={queryData} {setCurrentTab} />
 			</TabsContent>
 			<TabsContent value="contributors">
-				<ContributorsTab hackathon={$hackathonQuery.data} />
+				<ContributorsTab hackathon={queryData} />
 			</TabsContent>
 			<TabsContent value="teams">
-				<TeamsTab hackathon={$hackathonQuery.data} {teams} {user} />
+				<TeamsTab hackathon={queryData} {teams} {user} />
 			</TabsContent>
 			<TabsContent value="submissions">
-				<SubmissionsTab hackathon={$hackathonQuery.data} {userHackathons} />
+				<SubmissionsTab hackathon={queryData} {userHackathons} />
 			</TabsContent>
 			{#if isOrganizer && isJudgingPhase}
 				<TabsContent value="winSelection">
-					<WinnerSelectionTab {teams} hackathon={$hackathonQuery.data} />
+					<WinnerSelectionTab {teams} hackathon={queryData} />
 				</TabsContent>
 			{/if}
-			{#if isMemberOfWinningTeam && isHackathonCompleted && user && $hackathonQuery.data}
+			{#if isMemberOfWinningTeam && isHackathonCompleted && user && queryData}
 				<TabsContent value="claimPrize">
-					<ClaimPrizeTab {user} hackathon={$hackathonQuery.data} />
+					<ClaimPrizeTab {user} hackathon={queryData} />
 				</TabsContent>
 			{/if}
 		</Tabs>

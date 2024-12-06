@@ -121,7 +121,7 @@ export const walletRouter = router({
 				});
 			}
 		}),
-	announceWinners: authedProcedure
+	announceWinner: authedProcedure
 		.input(
 			z.object({
 				hackathonId: z.string(),
@@ -200,6 +200,7 @@ export const walletRouter = router({
 				});
 
 				// Step 4: Create the request
+				// @ts-expect-error it goes through
 				const request = await requestNetwork.createRequest(input.reqParams);
 
 				return {

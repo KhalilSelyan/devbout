@@ -21,8 +21,11 @@
 	let selectedWinningTeam: Teams[number] | null = $state(null);
 
 	let teamAddresses = trpc.team.getTeamMemberWalletAddresses.mutation();
-	let announceWinnerMutation = trpc.wallet.announceWinners.mutation();
+	let announceWinnerMutation = trpc.wallet.announceWinner.mutation();
 	const walletState = useWalletState();
+	let updateStatusMutation = trpc.hackathon.updateHackathonStatus.mutation();
+
+	let loadingState: { winnerName: string; remaining: number } | null = $state(null);
 
 	const updateHackathonStateInContract = async ({
 		hackathon,
@@ -65,6 +68,15 @@
 						_newState: mappedState,
 						contract
 					});
+
+					await $updateStatusMutation.mutateAsync(
+						{ hackathonId: hackathon.id, status: 'COMPLETED' },
+						{
+							onSuccess: () => {
+								trpc.hackathon.getHackathonDetails.utils.invalidate({ hackathonId: hackathon.id });
+							}
+						}
+					);
 				} catch (error) {
 					console.error(error);
 					return false;
@@ -77,6 +89,7 @@
 			}
 		}
 	};
+	let amountOfSuccesses = $state(0);
 
 	async function confirmSelection() {
 		const stateMapping = {
@@ -91,22 +104,31 @@
 			let selectedTeamAddresses = await $teamAddresses.mutateAsync({
 				teamId: selectedWinningTeam.id
 			});
-			let amountOfSuccesses = 0;
 			try {
-				selectedTeamAddresses.map(async (member) => {
+				for (const member of selectedTeamAddresses) {
 					if (member.user.walletAddress && member.user.walletAddress !== '') {
-						await $announceWinnerMutation.mutateAsync({
-							hackathonId: hackathon.id,
-							winningParticipantAddress: member.user.walletAddress
-						});
-						toast.success(`Winner ${member.user.name} announced successfully!`);
-						amountOfSuccesses++;
+						loadingState = {
+							winnerName: selectedWinningTeam.name,
+							remaining: amountOfSuccesses - selectedTeamAddresses.length
+						};
+						await $announceWinnerMutation.mutateAsync(
+							{
+								hackathonId: hackathon.id,
+								winningParticipantAddress: member.user.walletAddress
+							},
+							{
+								onSuccess: () => {
+									toast.success(`Winner ${member.user.name} announced successfully!`);
+									amountOfSuccesses++;
+								}
+							}
+						);
 					} else {
 						toast.warning(
 							`${member.user.name} doesn't have his walletAddress saved in the db, contact them separately.`
 						);
 					}
-				});
+				}
 
 				await updateHackathonStateInContract({
 					hackathon,
@@ -116,6 +138,8 @@
 			} catch (error) {
 				console.error('Failed to announce winner:', error);
 				toast.error('Failed to announce winner');
+			} finally {
+				loadingState = null;
 			}
 		} else {
 			toast.error('No team selected');
@@ -152,4 +176,18 @@
 			</div>
 		</CardContent>
 	</Card>
+{/if}
+
+{#if loadingState}
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-800 bg-opacity-75">
+		<Card>
+			<CardHeader>
+				<CardTitle>Setting Winner</CardTitle>
+			</CardHeader>
+			<CardContent>
+				<p>Setting winner: {loadingState.winnerName}</p>
+				<p>Remaining: {loadingState.remaining}</p>
+			</CardContent>
+		</Card>
+	</div>
 {/if}

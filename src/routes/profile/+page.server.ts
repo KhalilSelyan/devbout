@@ -17,6 +17,10 @@ export const load = async (event) => {
 	const formdata = await superValidate(zod(schema));
 	const userProfileData = await trpcServer.user.getProfile.ssr(event.locals.session.userId, event);
 	const userContributions = await trpcServer.user.getContributions.ssr(event);
+	const userHackathons = await trpcServer.hackathon.getUserHackathons.ssr(
+		event.locals.session.userId,
+		event
+	);
 
 	const currentUser = await db.query.user.findFirst({
 		where: eq(user.id, event.locals.session.userId)
@@ -33,7 +37,8 @@ export const load = async (event) => {
 		user: event.locals.user,
 		userProfileData,
 		userContributions,
-		userRequests: userRequests
+		userRequests: userRequests,
+		userHackathons
 	};
 };
 

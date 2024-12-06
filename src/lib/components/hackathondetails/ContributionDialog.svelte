@@ -114,11 +114,18 @@
 				console.log({ requestId: reshandle.requestId, userWalletAddress });
 
 				// ON CONFIRM PAYMENT DONE , CALL TRPC ENDPOINT FOR TRANSFERING MONEY FROM PLATFORM WALLET TO SMARTCONTRACT.
-				$createContribution.mutate({
-					hackathonId,
-					amount,
-					contributorAddress: userWalletAddress
-				});
+				$createContribution.mutate(
+					{
+						hackathonId,
+						amount,
+						contributorAddress: userWalletAddress
+					},
+					{
+						onSuccess: () => {
+							trpc.hackathon.getHackathonDetails.utils.invalidate({ hackathonId });
+						}
+					}
+				);
 
 				return true;
 			} catch (err) {

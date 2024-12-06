@@ -17,6 +17,7 @@
 	import type { User } from 'better-auth';
 	import { ethers } from 'ethers';
 	import { toast } from 'svelte-sonner';
+	import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
 	let {
 		hackathon,
@@ -26,6 +27,7 @@
 		user: User;
 	} = $props();
 	let claiming = $state(false);
+	let loadingState: { winnerName: string; remaining: number } | null = $state(null);
 
 	const walletState = useWalletState();
 
@@ -78,15 +80,22 @@
 					const reqParams = prepareRequestParameters({
 						amountInCrypto: memberPrize,
 						builderId: 'DevBout',
-						contributorInfo: {
-							address: undefined,
-							businessName: 'KhalilSelyan',
-							companyRegistration: 'KhalilSelyan',
-							email: 'khalil@leodrive.ai',
-							firstName: 'Khalil',
-							lastName: 'Selyan',
-							phone: '',
-							taxRegistration: ''
+						platformInfo: {
+							address: {
+								'country-name': wallet.user.countryName ?? '',
+								'postal-code': wallet.user.postalCode ?? '',
+								'street-address': wallet.user.streetAddress ?? '',
+								locality: wallet.user.locality ?? ''
+							},
+							businessName: wallet.user.businessName ?? '',
+							companyRegistration: wallet.user.businessName ?? '',
+							email: wallet.user.email,
+							firstName: wallet.user.firstName ?? '',
+							lastName: wallet.user.lastName ?? '',
+							phone: wallet.user.phone ?? '',
+							logo: '',
+							name: wallet.user.name,
+							taxRegistration: wallet.user.taxRegistration ?? ''
 						},
 						createdWith: 'DevBout',
 						currency: {
@@ -103,15 +112,13 @@
 						feeAmountInCrypto: 0,
 						payerAddress: PUBLIC_PLATFORM_WALLET_ADDRESS,
 						platformAddress: wallet.user.walletAddress,
-						platformInfo: {
+						contributorInfo: {
 							address: undefined,
 							businessName: 'DevBout',
 							companyRegistration: 'DevBout',
 							email: 'khalilselyan@gmail.com',
 							firstName: 'Dev',
 							lastName: 'Bout',
-							logo: '',
-							name: 'DevBout',
 							phone: '',
 							taxRegistration: ''
 						},
@@ -178,16 +185,24 @@
 
 				// const tet = await executeBatchPayments(batchPaymentProps);
 
-				const claimPrizeProps: Parameters<typeof claimContractPrize>[0] = {
-					_hackathonId: hackathon.id,
-					_winnerAddress: recipients[0],
-					_paymentRef: ethers.utils.hexlify(ethers.utils.toUtf8Bytes(_paymentRefs[0])),
-					_wonAmount: ethers.utils.parseUnits(amounts[0].toString(), 18),
-					contract
-				};
+				for (const [index, recipient] of recipients.entries()) {
+					loadingState = {
+						winnerName: teamWallets[index].user.name,
+						remaining: recipients.length - index
+					}; // Update loading state
 
-				await claimContractPrize(claimPrizeProps);
+					const claimPrizeProps: Parameters<typeof claimContractPrize>[0] = {
+						_hackathonId: hackathon.id,
+						_winnerAddress: recipient,
+						_paymentRef: ethers.utils.hexlify(ethers.utils.toUtf8Bytes(_paymentRefs[index])),
+						_wonAmount: ethers.utils.parseUnits(amounts[index].toString(), 18),
+						contract
+					};
 
+					await claimContractPrize(claimPrizeProps);
+				}
+
+				loadingState = null; // Reset loading state after processing
 				return true;
 			} catch (err) {
 				console.error('Failed to claim prize:', err);
@@ -219,3 +234,17 @@
 		{/each}
 	</ul>
 </div>
+
+{#if loadingState}
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-800 bg-opacity-75">
+		<Card>
+			<CardHeader>
+				<CardTitle>Claiming Prize</CardTitle>
+			</CardHeader>
+			<CardContent>
+				<p>Claiming prize for: {loadingState.winnerName}</p>
+				<p>Remaining: {loadingState.remaining}</p>
+			</CardContent>
+		</Card>
+	</div>
+{/if}

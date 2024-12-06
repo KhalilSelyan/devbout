@@ -11,4 +11,5 @@
 	userProfileData={data.userProfileData}
 	userContributions={data.userContributions}
 	userRequests={data.userRequests}
+	userHackathons={data.userHackathons}
 />

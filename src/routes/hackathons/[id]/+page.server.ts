@@ -65,6 +65,7 @@ export const actions = {
 			await teamService.requestToJoinTeam(
 				form.data.teamId,
 				event.locals.user.id,
+				form.data.hackathonId,
 				form.data.message
 			);
 			return { form };
