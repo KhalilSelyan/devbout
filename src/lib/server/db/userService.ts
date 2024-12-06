@@ -73,17 +73,20 @@ export const userService = {
 		return contributions;
 	},
 	async updateUserInfo(userId: string, userInfo: z.infer<typeof schema>) {
-		return await db
-			.update(user)
-			.set({
-				...userInfo,
-				streetAddress: userInfo.address['street-address'],
-				countryName: userInfo.address['country-name'],
-				locality: userInfo.address.locality,
-				postalCode: userInfo.address['postal-code'],
-				updatedAt: new Date()
-			})
-			.where(eq(user.id, userId))
-			.returning();
+		const updatedData = {
+			...userInfo,
+			streetAddress: userInfo.address['street-address'] || undefined,
+			countryName: userInfo.address['country-name'] || undefined,
+			locality: userInfo.address.locality || undefined,
+			postalCode: userInfo.address['postal-code'] || undefined,
+			updatedAt: new Date()
+		};
+
+		// Filter out properties with undefined values
+		const filteredData = Object.fromEntries(
+			Object.entries(updatedData).filter(([, v]) => v !== undefined && v !== '')
+		);
+
+		return await db.update(user).set(filteredData).where(eq(user.id, userId)).returning();
 	}
 };
