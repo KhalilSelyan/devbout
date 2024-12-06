@@ -22,7 +22,7 @@
 	<nav class="flex items-center gap-2">
 		<Button href={route('/about')} variant="ghost">About</Button>
 		<Button href={route('/hackathons')} variant="ghost">Hackathons</Button>
-		<Button variant="ghost">Leaderboard</Button>
+		<!-- <Button variant="ghost">Leaderboard</Button> -->
 
 		{#if user}
 			{#if walletState.isWalletConnected}

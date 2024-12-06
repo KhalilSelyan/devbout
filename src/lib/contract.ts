@@ -1,5 +1,13 @@
+import type { MetaDetail } from '@requestnetwork/types/dist/payment-types';
 import { ethers } from 'ethers';
 import { getChainFromNetwork, getNetworkParams } from './rn-utils/req';
+
+export enum HackathonState {
+	OPEN = 0,
+	ONGOING = 1,
+	JUDGING = 2,
+	COMPLETED = 3
+}
 
 export async function createHackathon({
 	_hackathonId,
@@ -94,12 +102,6 @@ export async function recordContribution({
 	}
 }
 
-export enum HackathonState {
-	OPEN = 0,
-	ONGOING = 1,
-	JUDGING = 2,
-	COMPLETED = 3
-}
 // Function to update the hackathon state
 export async function updateHackathonState({
 	_hackathonId,
@@ -120,7 +122,7 @@ export async function updateHackathonState({
 }
 
 // Function to announce a winner
-export async function announceWinners({
+export async function announceWinner({
 	_hackathonId,
 	_winningParticipant,
 	contract
@@ -129,44 +131,48 @@ export async function announceWinners({
 	_winningParticipant: string; // Address of the winner
 	contract: ethers.Contract;
 }) {
-	const tx = await contract.announceWinners(_hackathonId, _winningParticipant);
+	const tx = await contract.announceWinner(_hackathonId, _winningParticipant);
 
-	console.log('Transaction sent:', tx.hash);
+	console.log('Transaction sent:', { tx });
 
 	// Wait for the transaction to be mined
 	const receipt = await tx.wait();
 	console.log('Transaction confirmed:', receipt.transactionHash);
+
+	return tx;
 }
 
-// Function for a winner to claim their prize
-export async function claimPrize({
+// Function to execute batch payments for winners
+export async function executeBatchPayments({
 	_hackathonId,
-	_winnerAddress,
-	_wonAmount,
-	_paymentRef,
-	_ethFeeProxy,
+	requestDetails,
+	feeAddress,
 	contract
 }: {
 	_hackathonId: string;
-	_winnerAddress: string;
-	_wonAmount: string; // Prize amount in ETH
-	_paymentRef: string; // Reference for the payment
-	_ethFeeProxy: string; // Address of the EthFeeProxy contract
+	requestDetails: any[];
+	feeAddress: string;
+	skipFeeUSDLimit: boolean;
 	contract: ethers.Contract;
 }) {
-	const tx = await contract.claimPrize(
-		_hackathonId,
-		_winnerAddress,
-		ethers.utils.parseEther(_wonAmount),
-		_paymentRef,
-		_ethFeeProxy
-	);
+	console.log({ _hackathonId, requestDetails, contract });
 
-	console.log('Transaction sent:', tx.hash);
+	// executeBatchPayments(string,(uint256,(address,uint256,address[],bytes,uint256,uint256,uint256)[])[],address[][],address)
+
+	const metaDetails: MetaDetail[] = [{ paymentNetworkId: 3, requestDetails }];
+
+	const pathsToUSD: string[][] = [];
+	const tx = await contract.executeBatchPayments(_hackathonId, metaDetails, pathsToUSD, feeAddress);
+
+	console.log({ tx });
+
+	console.log('Batch payment transaction sent:', tx.hash);
 
 	// Wait for the transaction to be mined
 	const receipt = await tx.wait();
-	console.log('Transaction confirmed:', receipt.transactionHash);
+	console.log('Batch payment confirmed:', receipt.transactionHash);
+
+	return receipt.transactionHash;
 }
 
 // Helper to switch to the target network

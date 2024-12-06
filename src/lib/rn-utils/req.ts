@@ -286,6 +286,80 @@ export const handleRequestPayment = async ({
 	return inMemoryRequest;
 };
 
+export const handleRequestCreate = async ({
+	requestParameters,
+	walletProvider
+}: {
+	requestParameters: any;
+	walletProvider: any;
+}) => {
+	let ethersProvider: providers.Web3Provider;
+	let targetChain: (typeof chains)[0];
+
+	const initializeProvider = async () => {
+		ethersProvider = new providers.Web3Provider(walletProvider);
+		const targetNetwork = requestParameters.requestInfo.currency.network;
+		const chain = getChainFromNetwork(targetNetwork);
+		if (!chain) {
+			throw new Error(`Unsupported network: ${targetNetwork}`);
+		}
+		targetChain = chain;
+	};
+
+	const ensureCorrectNetwork = async () => {
+		const currentChainId = await ethersProvider.getNetwork().then((net) => net.chainId);
+
+		if (currentChainId !== targetChain.chainId) {
+			try {
+				await ethersProvider.send('wallet_switchEthereumChain', [
+					{ chainId: utils.hexValue(targetChain.chainId) }
+				]);
+			} catch (switchError: any) {
+				if (switchError.code === 4902) {
+					try {
+						await ethersProvider.send('wallet_addEthereumChain', [getNetworkParams(targetChain)]);
+					} catch (addError) {
+						console.error(addError);
+						throw new Error(
+							`Failed to add and switch to the required network: ${targetChain.name}`
+						);
+					}
+				} else {
+					throw new Error(`Failed to switch to the required network: ${targetChain.name}`);
+				}
+			}
+			await initializeProvider();
+		}
+	};
+
+	await initializeProvider();
+	await ensureCorrectNetwork();
+
+	const web3SignatureProvider = new Web3SignatureProvider(ethersProvider!.provider);
+
+	const inMemoryRequestNetwork = new RequestNetwork({
+		nodeConnectionConfig: {
+			baseURL: 'https://sepolia.gateway.request.network'
+		},
+		signatureProvider: web3SignatureProvider,
+		skipPersistence: true
+	});
+
+	console.log({ inMemoryRequestNetwork });
+
+	console.log({ requestParameters });
+
+	const inMemoryRequest = await inMemoryRequestNetwork.createRequest({
+		requestInfo: requestParameters.requestInfo,
+		paymentNetwork: requestParameters.paymentNetwork,
+		contentData: requestParameters.contentData,
+		signer: requestParameters.signer
+	});
+	console.log({ inMemoryRequest });
+
+	return inMemoryRequest;
+};
+
 export function getChainFromNetwork(network: string): (typeof chains)[0] | undefined {
 	const networkLower = network.toLowerCase();
 	switch (networkLower) {

@@ -19,10 +19,12 @@
 	import { contractabi } from '$lib/contractabi';
 	import { appKit } from '$lib/appKit';
 	import { useWalletState } from '$lib/appKitState.svelte';
+	import type { User } from 'better-auth';
 
 	type Teams = NonNullable<Awaited<ReturnType<typeof teamService.getHackathonTeams>>>;
 
-	let { hackathonId, teams }: { hackathonId: string; teams: Teams } = $props();
+	let { hackathonId, teams, user }: { hackathonId: string; teams: Teams; user: User | undefined } =
+		$props();
 
 	let isDialogOpen = $state(false);
 
@@ -30,6 +32,8 @@
 	let loading = $state(false);
 	let teamId = $state(nanoid());
 	const walletState = useWalletState();
+
+	let updateWalletInfo = trpc.user.updateWalletAddress.mutation();
 
 	async function addParticipantBeforeCreateJoinTeamInDb({
 		_hackathonId
@@ -83,16 +87,21 @@
 			dataType: 'json',
 			resetForm: true,
 			onSubmit: async ({ cancel }) => {
+				loading = true;
 				const hasGoneThrough = await addParticipantBeforeCreateJoinTeamInDb({
 					_hackathonId: hackathonId
 				});
 
 				if (!hasGoneThrough) cancel();
+
+				$updateWalletInfo.mutate({ walletAddress: walletState.address ?? '' });
 			},
 			onUpdated: ({ form }) => {
 				console.log({ form });
 				if (form.valid) {
 					trpc.hackathon.getHackathonDetails.utils.invalidate({ hackathonId });
+					trpc.hackathon.getUserHackathons.utils.invalidate(user?.id ?? '');
+					loading = false;
 					isDialogOpen = false;
 				}
 			}
@@ -138,11 +147,15 @@
 >
 	<Dialog.Trigger
 		onclick={() => (isDialogOpen = true)}
-		class={cn(buttonVariants({ variant: 'default' }), 'w-full')}>Join/Create Team</Dialog.Trigger
+		class={cn(buttonVariants({ variant: 'default' }), 'w-full')}
 	>
+		Join/Create Team
+	</Dialog.Trigger>
 	<Dialog.Overlay
-		onclick={() => {
-			isDialogOpen = false;
+		onclick={(e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			if (!loading) isDialogOpen = false;
 		}}
 	/>
 	<Dialog.Content class="overflow-y-auto bg-popover sm:max-h-[40rem] sm:max-w-[40rem]">
@@ -191,20 +204,21 @@
 					<div class="flex justify-end gap-2">
 						<Button
 							type="button"
+							disabled={loading}
 							variant="ghost"
 							onclick={() => {
 								isDialogOpen = false;
-							}}>Cancel</Button
+							}}
 						>
-						<Button type="submit">Create Team</Button>
+							Cancel
+						</Button>
+						<Button disabled={loading} type="submit">Create Team</Button>
 					</div>
 				</form>
 			</Tabs.Content>
 
 			<Tabs.Content value="join" class="mt-4">
-				{#if loading}
-					<div class="flex justify-center">Loading teams...</div>
-				{:else if $teamsloaded.data?.length === 0 || !$teamsloaded.data}
+				{#if $teamsloaded.data?.length === 0 || !$teamsloaded.data}
 					<div class="text-center text-muted-foreground">No teams available to join</div>
 				{:else}
 					<form

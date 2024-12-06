@@ -171,5 +171,20 @@ export const teamRouter = router({
 				cause: error
 			});
 		}
-	})
+	}),
+
+	getTeamMemberWalletAddresses: authedProcedure
+		.input(z.object({ teamId: z.string() }))
+		.mutation(async ({ input }) => {
+			try {
+				const walletAddresses = await teamService.getTeamMemberWalletAddresses(input.teamId);
+				return walletAddresses;
+			} catch (error) {
+				throw new TRPCError({
+					code: 'INTERNAL_SERVER_ERROR',
+					message: 'Failed to fetch wallet addresses',
+					cause: error
+				});
+			}
+		})
 });

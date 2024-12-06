@@ -320,5 +320,14 @@ export const teamService = {
 				team: true // Include team details if needed
 			}
 		});
+	},
+
+	async getTeamMemberWalletAddresses(teamId: string) {
+		return await db.query.teamMember.findMany({
+			where: eq(teamMember.teamId, teamId),
+			with: {
+				user: true
+			}
+		});
 	}
 };

@@ -2,7 +2,7 @@ export const contractabi = [
 	{ type: 'constructor', inputs: [], stateMutability: 'nonpayable' },
 	{
 		type: 'function',
-		name: 'announceWinners',
+		name: 'announceWinner',
 		inputs: [
 			{ name: '_hackathonId', type: 'string', internalType: 'string' },
 			{
@@ -13,6 +13,13 @@ export const contractabi = [
 		],
 		outputs: [],
 		stateMutability: 'nonpayable'
+	},
+	{
+		type: 'function',
+		name: 'batchConversionPayments',
+		inputs: [],
+		outputs: [{ name: '', type: 'address', internalType: 'address' }],
+		stateMutability: 'view'
 	},
 	{
 		type: 'function',
@@ -40,6 +47,75 @@ export const contractabi = [
 		],
 		outputs: [],
 		stateMutability: 'payable'
+	},
+	{
+		type: 'function',
+		name: 'executeBatchPayments',
+		inputs: [
+			{ name: 'hackathonId', type: 'string', internalType: 'string' },
+			{
+				name: 'metaDetails',
+				type: 'tuple[]',
+				internalType: 'struct MetaDetail[]',
+				components: [
+					{
+						name: 'paymentNetworkId',
+						type: 'uint256',
+						internalType: 'uint256'
+					},
+					{
+						name: 'requestDetails',
+						type: 'tuple[]',
+						internalType: 'struct RequestDetail[]',
+						components: [
+							{
+								name: 'recipient',
+								type: 'address',
+								internalType: 'address'
+							},
+							{
+								name: 'requestAmount',
+								type: 'uint256',
+								internalType: 'uint256'
+							},
+							{
+								name: 'path',
+								type: 'address[]',
+								internalType: 'address[]'
+							},
+							{
+								name: 'paymentReference',
+								type: 'bytes',
+								internalType: 'bytes'
+							},
+							{
+								name: 'feeAmount',
+								type: 'uint256',
+								internalType: 'uint256'
+							},
+							{
+								name: 'maxToSpend',
+								type: 'uint256',
+								internalType: 'uint256'
+							},
+							{
+								name: 'maxRateTimespan',
+								type: 'uint256',
+								internalType: 'uint256'
+							}
+						]
+					}
+				]
+			},
+			{
+				name: 'pathsToUSD',
+				type: 'address[][]',
+				internalType: 'address[][]'
+			},
+			{ name: 'feeAddress', type: 'address', internalType: 'address' }
+		],
+		outputs: [],
+		stateMutability: 'nonpayable'
 	},
 	{
 		type: 'function',
@@ -80,7 +156,7 @@ export const contractabi = [
 			{
 				name: 'state',
 				type: 'uint8',
-				internalType: 'enum HackathonPrizePool.HackathonState'
+				internalType: 'enum HackathonPrizeManagement.HackathonState'
 			},
 			{ name: 'winnerCount', type: 'uint64', internalType: 'uint64' }
 		],
@@ -119,6 +195,19 @@ export const contractabi = [
 	},
 	{
 		type: 'function',
+		name: 'setBatchConversionPayments',
+		inputs: [
+			{
+				name: '_batchConversionPayments',
+				type: 'address',
+				internalType: 'address'
+			}
+		],
+		outputs: [],
+		stateMutability: 'nonpayable'
+	},
+	{
+		type: 'function',
 		name: 'transferOwnership',
 		inputs: [{ name: 'newOwner', type: 'address', internalType: 'address' }],
 		outputs: [],
@@ -132,11 +221,80 @@ export const contractabi = [
 			{
 				name: '_newState',
 				type: 'uint8',
-				internalType: 'enum HackathonPrizePool.HackathonState'
+				internalType: 'enum HackathonPrizeManagement.HackathonState'
 			}
 		],
 		outputs: [],
 		stateMutability: 'nonpayable'
+	},
+	{
+		type: 'event',
+		name: 'BatchPaymentExecuted',
+		inputs: [
+			{
+				name: 'hackathonId',
+				type: 'string',
+				indexed: true,
+				internalType: 'string'
+			}
+		],
+		anonymous: false
+	},
+	{
+		type: 'event',
+		name: 'BatchPaymentExecutionAttempt',
+		inputs: [
+			{
+				name: 'hackathonId',
+				type: 'string',
+				indexed: true,
+				internalType: 'string'
+			},
+			{
+				name: 'winners',
+				type: 'address[]',
+				indexed: false,
+				internalType: 'address[]'
+			},
+			{
+				name: 'amounts',
+				type: 'uint256[]',
+				indexed: false,
+				internalType: 'uint256[]'
+			},
+			{
+				name: 'paymentReferences',
+				type: 'bytes[]',
+				indexed: false,
+				internalType: 'bytes[]'
+			},
+			{
+				name: 'feeAddress',
+				type: 'address',
+				indexed: false,
+				internalType: 'address'
+			}
+		],
+		anonymous: false
+	},
+	{
+		type: 'event',
+		name: 'BatchPaymentExecutionFailed',
+		inputs: [
+			{
+				name: 'hackathonId',
+				type: 'string',
+				indexed: true,
+				internalType: 'string'
+			},
+			{
+				name: 'errorMessage',
+				type: 'string',
+				indexed: false,
+				internalType: 'string'
+			}
+		],
+		anonymous: false
 	},
 	{
 		type: 'event',
@@ -208,7 +366,7 @@ export const contractabi = [
 				name: 'newState',
 				type: 'uint8',
 				indexed: false,
-				internalType: 'enum HackathonPrizePool.HackathonState'
+				internalType: 'enum HackathonPrizeManagement.HackathonState'
 			}
 		],
 		anonymous: false

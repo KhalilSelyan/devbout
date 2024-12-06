@@ -104,18 +104,6 @@ export const actions = {
 		if (!event.locals.user) return fail(401, { form });
 
 		try {
-			/* The code snippet you provided is a part of the `createContribution` action in your TypeScript
-	file. */
-
-			// 	const hasGoneThrough = await createContributionToHackathon({
-			// 		_hackathonId: String(form.data.hackathonId),
-			// 		amount: String(form.data.amount)
-			// 	});
-
-			// 	if (!hasGoneThrough) {
-			// 		return fail(500, { form, message: 'Failed to create contribution' });
-			// 	}
-
 			return { form };
 		} catch (error) {
 			console.error(error);

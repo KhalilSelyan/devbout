@@ -10,12 +10,14 @@
 	} from '$lib/components/ui/card';
 	import type { hackathonService } from '$lib/server/db/hackathonService';
 	import type { teamService } from '$lib/server/db/teamService';
+	import type { User } from 'better-auth';
 	import TeamDialog from '../TeamDialog.svelte';
 
 	type Hackathon = Awaited<ReturnType<typeof hackathonService.getHackathonDetails>>;
 	type Teams = NonNullable<Awaited<ReturnType<typeof teamService.getHackathonTeams>>>;
 
-	let { hackathon, teams }: { hackathon: Hackathon; teams: Teams } = $props();
+	let { hackathon, teams, user }: { hackathon: Hackathon; teams: Teams; user: User | undefined } =
+		$props();
 </script>
 
 {#if hackathon}
@@ -42,7 +44,9 @@
 			</ul>
 		</CardContent>
 		<CardFooter class="w-full">
-			<TeamDialog {teams} hackathonId={hackathon.id} />
+			{#if user}
+				<TeamDialog {teams} hackathonId={hackathon.id} />
+			{/if}
 		</CardFooter>
 	</Card>
 {/if}

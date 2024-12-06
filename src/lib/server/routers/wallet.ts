@@ -4,15 +4,18 @@ import {
 	PUBLIC_JSONRPC_URL,
 	PUBLIC_PLATFORM_WALLET_ADDRESS
 } from '$env/static/public';
-import { createHackathon, recordContribution } from '$lib/contract';
+import { announceWinner, createHackathon, recordContribution } from '$lib/contract';
 import { contractabi } from '$lib/contractabi';
+import { type prepareRequestParameters } from '$lib/rn-utils/req';
 import { authedProcedure, router } from '$lib/server/trpc';
 import { TRPCError } from '@trpc/server';
-import { ethers } from 'ethers';
-import { z } from 'zod';
-import { hackathon, prizePool } from '../db/schema';
 import { eq, sql } from 'drizzle-orm';
+import { ethers } from 'ethers';
 import { nanoid } from 'nanoid';
+import { z } from 'zod';
+import { hackathon, prizePool, team } from '../db/schema';
+import { RequestNetwork, Types } from '@requestnetwork/request-client.js';
+import { EthereumPrivateKeySignatureProvider } from '@requestnetwork/epk-signature';
 
 export const walletRouter = router({
 	createHackathonThroughPlatformWallet: authedProcedure
@@ -114,6 +117,100 @@ export const walletRouter = router({
 				throw new TRPCError({
 					code: 'INTERNAL_SERVER_ERROR',
 					message: 'Failed to update contributions',
+					cause: error
+				});
+			}
+		}),
+	announceWinners: authedProcedure
+		.input(
+			z.object({
+				hackathonId: z.string(),
+				winningParticipantAddress: z.string()
+			})
+		)
+		.mutation(async ({ input, ctx }) => {
+			try {
+				const provider = new ethers.providers.JsonRpcProvider(PUBLIC_JSONRPC_URL);
+
+				const wallet = new ethers.Wallet(PLATFORM_WALLET_PRIVATEKEY, provider);
+
+				const contract = new ethers.Contract(PUBLIC_CONTRACT_ADDRESS, contractabi, wallet);
+
+				console.log({ id: input.hackathonId, winner: input.winningParticipantAddress });
+
+				const e = await announceWinner({
+					_hackathonId: input.hackathonId,
+					_winningParticipant: input.winningParticipantAddress,
+					contract
+				}).catch((e) => {
+					console.error(e);
+				});
+
+				await ctx.db
+					.update(team)
+					.set({
+						isWinner: true
+					})
+					.where(eq(team.hackathonId, input.hackathonId));
+
+				console.log({ e });
+			} catch (error) {
+				throw new TRPCError({
+					code: 'INTERNAL_SERVER_ERROR',
+					message: 'Failed to create hackathon',
+					cause: error
+				});
+			}
+		}),
+	createRequestForClaiming: authedProcedure
+		.input(
+			z.object({
+				reqParams: z.custom<ReturnType<typeof prepareRequestParameters>>()
+			})
+		)
+		.mutation(async ({ input }) => {
+			try {
+				// Step 1: Initialize the wallet and provider
+				const walletProvider = new ethers.providers.JsonRpcProvider(PUBLIC_JSONRPC_URL);
+
+				const epkSignatureProvider = new EthereumPrivateKeySignatureProvider({
+					method: Types.Signature.METHOD.ECDSA,
+					privateKey: PLATFORM_WALLET_PRIVATEKEY
+				});
+
+				// Step 2: Ensure we're on the correct network
+				const chainId = await walletProvider.getNetwork().then((net) => net.chainId);
+
+				if (chainId !== 11155111) {
+					// 11155111 is the chain ID for Sepolia
+					throw new TRPCError({
+						code: 'BAD_REQUEST',
+						message: 'Not on Sepolia network'
+					});
+				}
+
+				// Step 3: Set up the RequestNetwork client
+
+				const requestNetwork = new RequestNetwork({
+					nodeConnectionConfig: {
+						baseURL: 'https://sepolia.gateway.request.network' // Ensure this matches your node
+					},
+					signatureProvider: epkSignatureProvider,
+					skipPersistence: true
+				});
+
+				// Step 4: Create the request
+				const request = await requestNetwork.createRequest(input.reqParams);
+
+				return {
+					requestId: request.requestId,
+					salt: request.inMemoryInfo?.requestData.extensions['pn-eth-fee-proxy-contract'].values
+						.salt
+				};
+			} catch (error) {
+				throw new TRPCError({
+					code: 'INTERNAL_SERVER_ERROR',
+					message: 'Failed to create request for claiming',
 					cause: error
 				});
 			}
