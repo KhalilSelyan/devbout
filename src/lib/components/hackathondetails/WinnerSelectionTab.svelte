@@ -25,7 +25,7 @@
 	const walletState = useWalletState();
 	let updateStatusMutation = trpc.hackathon.updateHackathonStatus.mutation();
 
-	let loadingState: { winnerName: string; remaining: number } | null = $state(null);
+	let loadingState: { title: string; description: number } | null = $state(null);
 
 	const updateHackathonStateInContract = async ({
 		hackathon,
@@ -61,7 +61,8 @@
 					ethersProvider!.getSigner()
 				);
 
-				const mappedState = stateMapping[newStatus as Exclude<typeof hackathon.status, 'DRAFT'>];
+				const mappedState =
+					stateMapping[newStatus as Exclude<Exclude<typeof hackathon.status, 'DRAFT'>, 'PAID'>];
 				try {
 					await updateHackathonState({
 						_hackathonId: hackathon.id,
@@ -108,8 +109,8 @@
 				for (const member of selectedTeamAddresses) {
 					if (member.user.walletAddress && member.user.walletAddress !== '') {
 						loadingState = {
-							winnerName: selectedWinningTeam.name,
-							remaining: amountOfSuccesses - selectedTeamAddresses.length
+							title: selectedWinningTeam.name,
+							description: selectedTeamAddresses.length - amountOfSuccesses
 						};
 						await $announceWinnerMutation.mutateAsync(
 							{
@@ -129,6 +130,11 @@
 						);
 					}
 				}
+
+				loadingState = {
+					title: 'Updating Hackathon to Completed State',
+					description: 0
+				};
 
 				await updateHackathonStateInContract({
 					hackathon,
@@ -185,8 +191,10 @@
 				<CardTitle>Setting Winner</CardTitle>
 			</CardHeader>
 			<CardContent>
-				<p>Setting winner: {loadingState.winnerName}</p>
-				<p>Remaining: {loadingState.remaining}</p>
+				<p>Setting winner: {loadingState.title}</p>
+				{#if !loadingState.title.includes('Updating')}
+					<p>Remaining: {loadingState.description}</p>
+				{/if}
 			</CardContent>
 		</Card>
 	</div>

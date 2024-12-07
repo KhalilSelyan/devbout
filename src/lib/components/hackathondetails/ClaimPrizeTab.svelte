@@ -18,6 +18,8 @@
 	import { ethers } from 'ethers';
 	import { toast } from 'svelte-sonner';
 	import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+	import { goto } from '$app/navigation';
+	import { route } from '$lib/ROUTES';
 
 	let {
 		hackathon,
@@ -33,6 +35,7 @@
 
 	let claimFromBackend = trpc.wallet.createRequestForClaiming.mutation();
 	let getTeamAddresses = trpc.team.getTeamMemberWalletAddresses.mutation();
+	let updateHackathonState = trpc.hackathon.updateHackathonStatus.mutation();
 
 	async function claimPrize() {
 		claiming = true;
@@ -203,6 +206,15 @@
 				}
 
 				loadingState = null; // Reset loading state after processing
+				await $updateHackathonState.mutateAsync(
+					{ status: 'PAID', hackathonId: hackathon.id },
+					{
+						onSuccess: () => {
+							goto(route('/'));
+						}
+					}
+				);
+
 				return true;
 			} catch (err) {
 				console.error('Failed to claim prize:', err);

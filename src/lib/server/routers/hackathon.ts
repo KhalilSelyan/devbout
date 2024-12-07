@@ -4,7 +4,7 @@ import { hackathonService } from '$lib/server/db/hackathonService';
 import { TRPCError } from '@trpc/server';
 
 // Zod schemas for validation
-const HackathonStatusEnum = z.enum(['DRAFT', 'OPEN', 'ONGOING', 'JUDGING', 'COMPLETED']);
+const HackathonStatusEnum = z.enum(['DRAFT', 'OPEN', 'ONGOING', 'JUDGING', 'COMPLETED', 'PAID']);
 const FundingTypeEnum = z.enum(['FULLY_FUNDED', 'CROWDFUNDED', 'HYBRID']);
 
 const HackathonCreateSchema = z.object({
