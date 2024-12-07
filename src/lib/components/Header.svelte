@@ -17,8 +17,10 @@
 	const walletState = useWalletState();
 </script>
 
-<header class="container mx-auto flex items-center justify-between py-6">
-	<a href={route('/')} class="text-2xl font-bold">DevBout</a>
+<header class="container mx-auto flex items-center justify-between py-4">
+	<a href={route('/')} class="flex items-center gap-2 text-2xl font-bold">
+		<span> DevBout </span>
+	</a>
 	<nav class="flex items-center gap-2">
 		<Button href={route('/about')} variant="ghost">About</Button>
 		<Button href={route('/hackathons')} variant="ghost">Hackathons</Button>

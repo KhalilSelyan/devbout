@@ -22,11 +22,18 @@
 	import { nanoid } from 'nanoid';
 	import { superForm, type Infer, type SuperValidated } from 'sveltekit-superforms';
 	import { zod } from 'sveltekit-superforms/adapters';
+	import LoadingOverlay from '$lib/components/LoadinOverlay.svelte';
 
 	// Use page store to get initial form data
 	let { data }: { data: SuperValidated<Infer<typeof hackathonSchema>> } = $props();
 
 	let createHackathonMutation = trpc.wallet.createHackathonThroughPlatformWallet.mutation();
+
+	let loading = $state(false);
+	let currentStep = $state('');
+	let progress = $state(0);
+	let error: string | null = $state(null);
+	let transactionHash = $state('');
 
 	async function beforeAddHackathonToDb({
 		_hackathonId,
@@ -37,6 +44,7 @@
 		_isCrowdfunded: boolean;
 		basePrize: string;
 	}) {
+		loading = true;
 		// If not connected open the modal to connect
 		if (!appKit.getIsConnectedState()) {
 			await appKit.open();
@@ -44,6 +52,9 @@
 
 		// if now connected show the rest if not ignore
 		if (appKit.getIsConnectedState()) {
+			currentStep = 'Connecting to wallet...';
+			progress = 25;
+
 			const provider = appKit.getWalletProvider();
 
 			if (!provider) {
@@ -56,6 +67,8 @@
 				const ethersProvider = new ethers.providers.Web3Provider(provider);
 
 				// Ensure correct network
+				currentStep = 'Switching to correct network...';
+				progress = 50;
 				await switchToTargetNetwork(ethersProvider, 'eth');
 
 				const reqParams = prepareRequestParameters({
@@ -101,6 +114,8 @@
 					totalAmountInCrypto: parseFloat(basePrize)
 				});
 
+				currentStep = 'Sending transaction...';
+				progress = 75;
 				const reshandle = await handleRequestPayment({
 					payerAddress: appKit.getAddress()!,
 					persistRequest: true,
@@ -109,6 +124,7 @@
 				});
 
 				console.log({ requestId: reshandle.requestId });
+				transactionHash = reshandle.inMemoryInfo?.transactionData.hash ?? '';
 
 				// ON CONFIRM PAYMENT DONE , CALL TRPC ENDPOINT FOR TRANSFERING MONEY FROM PLATFORM WALLET TO SMARTCONTRACT.
 				$createHackathonMutation.mutate({
@@ -116,7 +132,8 @@
 					isCrowdfunded: _isCrowdfunded,
 					basePrize
 				});
-
+				currentStep = 'Waiting for confirmation...';
+				progress = 90;
 				return true;
 			} catch (err) {
 				console.error(err);
@@ -161,6 +178,8 @@
 			if (form.valid) {
 				console.log('Form submitted successfully', form.data);
 				trpc.hackathon.getHackathons.utils.invalidate();
+				progress = 100;
+				loading = false;
 				submitButtonText = 'Create Hackathon';
 				isDialogOpen = false;
 			}
@@ -508,3 +527,14 @@
 		</form>
 	</Dialog.Content>
 </Dialog.Root>
+
+<LoadingOverlay
+	isOpen={loading}
+	title="Creating Hackathon"
+	{currentStep}
+	{progress}
+	{error}
+	canCancel={progress < 75}
+	timeEstimate="30-60 seconds"
+	{transactionHash}
+/>
