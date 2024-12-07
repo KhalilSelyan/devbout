@@ -1,22 +1,27 @@
 <script lang="ts">
-	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
-	import { Badge } from '$lib/components/ui/badge';
-	import { Button } from '$lib/components/ui/button';
-	import { Avatar, AvatarFallback, AvatarImage } from '$lib/components/ui/avatar';
-	import { Calendar, Check, X } from 'lucide-svelte';
-	import { trpc } from '$lib/trpc';
-	import type { User } from 'better-auth';
-	import { joinHackathon, switchToTargetNetwork } from '$lib/contract';
-	import { contractabi } from '$lib/contractabi';
 	import { PUBLIC_CONTRACT_ADDRESS } from '$env/static/public';
-	import { ethers } from 'ethers';
 	import { appKit } from '$lib/appKit';
 	import { useWalletState } from '$lib/appKitState.svelte';
+	import LoadingOverlay from '$lib/components/LoadinOverlay.svelte';
+	import { Avatar, AvatarFallback, AvatarImage } from '$lib/components/ui/avatar';
+	import { Badge } from '$lib/components/ui/badge';
+	import { Button } from '$lib/components/ui/button';
+	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
+	import { joinHackathon, switchToTargetNetwork } from '$lib/contract';
+	import { contractabi } from '$lib/contractabi';
+	import { trpc } from '$lib/trpc';
+	import type { User } from 'better-auth';
+	import { ethers } from 'ethers';
+	import { Calendar, Check, X } from 'lucide-svelte';
 
 	let { user }: { user: User } = $props();
 	let userHackathons = trpc.hackathon.getUserHackathons.query(user.id);
 	let pendingRequests = trpc.team.getLeaderTeamRequests.query();
 	let acceptedRequests = trpc.team.getAcceptedJoinRequests.query();
+	let loading = $state(false);
+	let currentStep = $state('');
+	let progress = $state(0);
+	let transactionHash = $state('');
 
 	// Mutations
 	let joinRequestMutation = trpc.team.handleJoinRequest.mutation();
@@ -29,12 +34,17 @@
 	}: {
 		_hackathonId: string;
 	}) {
+		loading = true;
 		// if now connected show the rest if not ignore
 		if (walletState.isWalletConnected) {
+			currentStep = 'Connecting to wallet...';
+			progress = 25;
+
 			const provider = appKit.getWalletProvider();
 
 			if (!provider) {
 				console.error('Wallet provider is not available.');
+				loading = false;
 				return false;
 			}
 
@@ -43,13 +53,16 @@
 				const ethersProvider = new ethers.providers.Web3Provider(provider);
 
 				// Ensure correct network
+				currentStep = 'Switching to correct network...';
+				progress = 50;
 				await switchToTargetNetwork(ethersProvider, 'eth');
 				const contract = new ethers.Contract(
 					PUBLIC_CONTRACT_ADDRESS,
 					contractabi,
 					ethersProvider!.getSigner()
 				);
-
+				currentStep = 'Waiting for confirmation...';
+				progress = 90;
 				await joinHackathon({
 					_hackathonId,
 					contract
@@ -242,6 +255,9 @@
 										});
 										if (!hasGoneThrough) return;
 										await handleJoinRequest(request.id, 'CONFIRMED');
+										currentStep = 'Done...';
+										progress = 100;
+										loading = false;
 									}}
 								>
 									Confirm
@@ -289,3 +305,14 @@
 		</Card>
 	</div>
 </div>
+
+<LoadingOverlay
+	isOpen={loading}
+	title="Creating Hackathon"
+	{currentStep}
+	{progress}
+	error={null}
+	canCancel={progress < 75}
+	timeEstimate="30-60 seconds"
+	{transactionHash}
+/>

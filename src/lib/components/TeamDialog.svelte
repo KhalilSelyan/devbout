@@ -135,8 +135,12 @@
 			validators: zod(teamJoinRequestSchema),
 			dataType: 'json',
 			resetForm: true,
+			onSubmit: () => {
+				loading = true;
+			},
 			onUpdated: ({ form }) => {
 				if (form.valid) {
+					loading = false;
 					isDialogOpen = false;
 					$updateWalletInfo.mutate({ walletAddress: walletState.address ?? '' });
 				}
@@ -283,6 +287,7 @@
 
 						<div class="flex justify-end gap-2">
 							<Button
+								disabled={loading}
 								type="button"
 								variant="ghost"
 								onclick={() => {
@@ -291,7 +296,7 @@
 							>
 								Cancel
 							</Button>
-							<Button type="submit" disabled={!$joinForm.teamId || !$joinForm.message}>
+							<Button type="submit" disabled={!$joinForm.teamId || !$joinForm.message || loading}>
 								Request to Join
 							</Button>
 						</div>
