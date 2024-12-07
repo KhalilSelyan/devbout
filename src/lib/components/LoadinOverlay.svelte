@@ -70,14 +70,15 @@
 							{#if transactionHash}
 								<div class="text-xs">
 									Transaction:
-									<a
+									<Button
 										href={`https://sepolia.etherscan.io/tx/${transactionHash}`}
 										target="_blank"
 										rel="noopener noreferrer"
-										class="text-primary hover:underline"
+										variant="ghost"
+										class="hover:underline"
 									>
 										View on Etherscan
-									</a>
+									</Button>
 								</div>
 							{/if}
 						</div>
