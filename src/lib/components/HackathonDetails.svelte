@@ -52,6 +52,14 @@
 				(team) => team.isWinner && team.members.find((member) => member.userId === user.id)
 			)
 	);
+	let isTeamLeader = $derived(
+		isMemberOfWinningTeam &&
+			user &&
+			isMemberOfWinningTeam.members.find(
+				(member) => member.userId === user.id && member.role === 'LEADER'
+			)?.userId === user.id
+	);
+
 	let queryData = $derived($hackathonQuery.data);
 </script>
 
@@ -77,7 +85,7 @@
 				{#if isOrganizer && isJudgingPhase}
 					<TabsTrigger class="w-full" value="winSelection">Winner Selection</TabsTrigger>
 				{/if}
-				{#if isMemberOfWinningTeam && isHackathonCompleted}
+				{#if isMemberOfWinningTeam && user && isTeamLeader && isHackathonCompleted}
 					<TabsTrigger class="w-full" value="claimPrize">Claim Prize</TabsTrigger>
 				{/if}
 			</TabsList>
@@ -98,7 +106,7 @@
 					<WinnerSelectionTab {teams} hackathon={queryData} />
 				</TabsContent>
 			{/if}
-			{#if isMemberOfWinningTeam && isHackathonCompleted && user && queryData}
+			{#if isMemberOfWinningTeam && user && isTeamLeader && isHackathonCompleted && queryData}
 				<TabsContent value="claimPrize">
 					<ClaimPrizeTab {user} hackathon={queryData} />
 				</TabsContent>
