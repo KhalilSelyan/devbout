@@ -9,7 +9,7 @@ export const submissionRouter = router({
 		return await submissionService.createSubmission({ ...input, score: input.score?.toString() });
 	}),
 
-	getSubmissionsByHackathonId: authedProcedure.input(z.string()).query(async ({ input }) => {
+	getSubmissionsByHackathonId: authedProcedure.input(z.string()).mutation(async ({ input }) => {
 		return await submissionService.getSubmissionsByHackathonId(input);
 	}),
 

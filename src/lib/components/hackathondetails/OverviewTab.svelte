@@ -23,6 +23,7 @@
 	import { PUBLIC_CONTRACT_ADDRESS, PUBLIC_PLATFORM_WALLET_ADDRESS } from '$env/static/public';
 	import { contractabi } from '$lib/contractabi';
 	import { handleRequestPayment, prepareRequestParameters } from '$lib/rn-utils/req';
+	import HackathonsTab from '../profile/HackathonsTab.svelte';
 
 	type Hackathon = Awaited<ReturnType<typeof hackathonService.getHackathonDetails>>;
 
@@ -39,6 +40,7 @@
 	const walletState = useWalletState();
 
 	let updateStatusMutation = trpc.hackathon.updateHackathonStatus.mutation();
+	let hackathonSubmissions = trpc.submission.getSubmissionsByHackathonId.mutation();
 	const isHackathonCreator = $derived.by(() => {
 		if (hackathon) return hackathon.organizer.id === user?.id;
 	});
@@ -181,7 +183,8 @@
 					ethersProvider!.getSigner()
 				);
 
-				const mappedState = stateMapping[newStatus as Exclude<typeof hackathon.status, 'DRAFT'>];
+				const mappedState =
+					stateMapping[newStatus as Exclude<Exclude<typeof hackathon.status, 'DRAFT'>, 'PAID'>];
 				try {
 					await updateHackathonState({
 						_hackathonId: hackathon.id,
@@ -341,9 +344,13 @@
 									COMPLETED: HackathonState.COMPLETED
 								};
 								const currentStatusValue =
-									stateMapping[hackathon.status as Exclude<typeof hackathon.status, 'DRAFT'>];
+									stateMapping[
+										hackathon.status as Exclude<Exclude<typeof hackathon.status, 'DRAFT'>, 'PAID'>
+									];
 								const newStatusValue =
-									stateMapping[newStatus as Exclude<typeof hackathon.status, 'DRAFT'>];
+									stateMapping[
+										newStatus as Exclude<Exclude<typeof hackathon.status, 'DRAFT'>, 'PAID'>
+									];
 								if (newStatusValue < currentStatusValue) {
 									toast.error('Cannot go back to a previous status.');
 									return;
@@ -352,6 +359,28 @@
 									value = hackathon.status;
 									return;
 								}
+
+								if (
+									newStatusValue === HackathonState.JUDGING ||
+									newStatusValue === HackathonState.COMPLETED
+								) {
+									const submissions = await $hackathonSubmissions.mutateAsync(hackathon.id);
+									if (submissions.length < 1) {
+										value = hackathon.status;
+										toast.error('Cannot close hackathon with no submissions');
+										return;
+									}
+								}
+
+								if (
+									newStatusValue === HackathonState.COMPLETED &&
+									currentStatusValue !== HackathonState.JUDGING
+								) {
+									value = hackathon.status;
+									toast.error('Cannot close hackathon without going through judging phase');
+									return;
+								}
+
 								const hasGoneThrough = await updateHackathonStateInContractBeforeDb({
 									hackathon,
 									newStatus,
