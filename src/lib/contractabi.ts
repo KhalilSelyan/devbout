@@ -43,10 +43,11 @@ export const contractabi = [
 		name: 'createHackathon',
 		inputs: [
 			{ name: '_isCrowdfunded', type: 'bool', internalType: 'bool' },
-			{ name: 'hackathonId', type: 'string', internalType: 'string' }
+			{ name: 'hackathonId', type: 'string', internalType: 'string' },
+			{ name: 'basePrize', type: 'uint256', internalType: 'uint256' }
 		],
 		outputs: [],
-		stateMutability: 'payable'
+		stateMutability: 'nonpayable'
 	},
 	{
 		type: 'function',
@@ -188,28 +189,24 @@ export const contractabi = [
 		name: 'recordContribution',
 		inputs: [
 			{ name: '_hackathonId', type: 'string', internalType: 'string' },
-			{ name: '_contributor', type: 'address', internalType: 'address' }
+			{
+				name: '_contributor',
+				type: 'address',
+				internalType: 'address'
+			},
+			{
+				name: 'contributedAmount',
+				type: 'uint256',
+				internalType: 'uint256'
+			}
 		],
-		outputs: [],
-		stateMutability: 'payable'
-	},
-	{
-		type: 'function',
-		name: 'renounceOwnership',
-		inputs: [],
 		outputs: [],
 		stateMutability: 'nonpayable'
 	},
 	{
 		type: 'function',
-		name: 'setBatchConversionPayments',
-		inputs: [
-			{
-				name: '_batchConversionPayments',
-				type: 'address',
-				internalType: 'address'
-			}
-		],
+		name: 'renounceOwnership',
+		inputs: [],
 		outputs: [],
 		stateMutability: 'nonpayable'
 	},
