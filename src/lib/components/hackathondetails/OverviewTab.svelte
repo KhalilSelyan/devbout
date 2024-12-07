@@ -16,14 +16,19 @@
 	import { Label } from '../ui/label';
 	import { Separator } from '../ui/separator';
 	import { toast } from 'svelte-sonner';
-	import { HackathonState, switchToTargetNetwork, updateHackathonState } from '$lib/contract';
+	import {
+		createHackathon,
+		HackathonState,
+		switchToTargetNetwork,
+		updateHackathonState
+	} from '$lib/contract';
 	import { useWalletState } from '$lib/appKitState.svelte';
 	import { appKit } from '$lib/appKit';
 	import { ethers } from 'ethers';
 	import { PUBLIC_CONTRACT_ADDRESS, PUBLIC_PLATFORM_WALLET_ADDRESS } from '$env/static/public';
 	import { contractabi } from '$lib/contractabi';
 	import { handleRequestPayment, prepareRequestParameters } from '$lib/rn-utils/req';
-	import HackathonsTab from '../profile/HackathonsTab.svelte';
+	import LoadinOverlay from '../LoadinOverlay.svelte';
 
 	type Hackathon = Awaited<ReturnType<typeof hackathonService.getHackathonDetails>>;
 
@@ -38,6 +43,11 @@
 	} = $props();
 
 	const walletState = useWalletState();
+	let loading = $state(false);
+	let currentStep = $state('');
+	let progress = $state(0);
+	let transactionHash = $state('');
+	let title = $state('');
 
 	let updateStatusMutation = trpc.hackathon.updateHackathonStatus.mutation();
 	let hackathonSubmissions = trpc.submission.getSubmissionsByHackathonId.mutation();
@@ -45,7 +55,6 @@
 		if (hackathon) return hackathon.organizer.id === user?.id;
 	});
 
-	let isCreatingInContract = $state(false);
 	let createHackathonMutation = trpc.wallet.createHackathonThroughPlatformWallet.mutation();
 
 	async function addHackathonToContract({
@@ -57,7 +66,7 @@
 		_isCrowdfunded: boolean;
 		basePrize: string;
 	}) {
-		isCreatingInContract = true;
+		loading = true;
 		// If not connected open the modal to connect
 		if (!appKit.getIsConnectedState()) {
 			await appKit.open();
@@ -65,11 +74,13 @@
 
 		// if now connected show the rest if not ignore
 		if (appKit.getIsConnectedState()) {
+			currentStep = 'Connecting to wallet...';
+			progress = 25;
 			const provider = appKit.getWalletProvider();
 
 			if (!provider) {
 				console.error('Wallet provider is not available.');
-				isCreatingInContract = false;
+				loading = false;
 				return false;
 			}
 
@@ -78,6 +89,8 @@
 				const ethersProvider = new ethers.providers.Web3Provider(provider);
 
 				// Ensure correct network
+				currentStep = 'Switching to correct network...';
+				progress = 50;
 				await switchToTargetNetwork(ethersProvider, 'eth');
 
 				const reqParams = prepareRequestParameters({
@@ -123,6 +136,9 @@
 					totalAmountInCrypto: parseFloat(basePrize)
 				});
 
+				currentStep = 'Sending transaction...';
+				progress = 75;
+
 				const reshandle = await handleRequestPayment({
 					payerAddress: appKit.getAddress()!,
 					persistRequest: true,
@@ -131,18 +147,27 @@
 				});
 
 				console.log({ requestId: reshandle.requestId });
+				currentStep = 'Waiting for confirmation...';
+				progress = 90;
 
-				// ON CONFIRM PAYMENT DONE , CALL TRPC ENDPOINT FOR TRANSFERING MONEY FROM PLATFORM WALLET TO SMARTCONTRACT.
-				$createHackathonMutation.mutate({
-					hackathonId: _hackathonId,
-					isCrowdfunded: _isCrowdfunded,
-					basePrize
+				transactionHash = reshandle.inMemoryInfo?.transactionData.hash ?? '';
+				const contract = new ethers.Contract(
+					PUBLIC_CONTRACT_ADDRESS,
+					contractabi,
+					ethersProvider!.getSigner()
+				);
+
+				await createHackathon({
+					_hackathonId,
+					_isCrowdfunded,
+					basePrize,
+					contract
 				});
 
 				return true;
 			} catch (err) {
 				console.error(err);
-				isCreatingInContract = false;
+				loading = false;
 				return false;
 			}
 		}
@@ -163,11 +188,16 @@
 			COMPLETED: HackathonState;
 		};
 	}) => {
+		loading = true;
+		title = 'Updating Hackathon State';
 		if (walletState.isWalletConnected) {
+			currentStep = 'Connecting to wallet...';
+			progress = 25;
 			const provider = appKit.getWalletProvider();
 
 			if (!provider) {
 				console.error('Wallet provider is not available.');
+				loading = false;
 				return false;
 			}
 
@@ -176,6 +206,8 @@
 				const ethersProvider = new ethers.providers.Web3Provider(provider);
 
 				// Ensure correct network
+				currentStep = 'Switching to correct network...';
+				progress = 50;
 				await switchToTargetNetwork(ethersProvider, 'eth');
 				const contract = new ethers.Contract(
 					PUBLIC_CONTRACT_ADDRESS,
@@ -186,19 +218,25 @@
 				const mappedState =
 					stateMapping[newStatus as Exclude<Exclude<typeof hackathon.status, 'DRAFT'>, 'PAID'>];
 				try {
+					currentStep = 'Sending transaction...';
+					progress = 75;
 					await updateHackathonState({
 						_hackathonId: hackathon.id,
 						_newState: mappedState,
 						contract
 					});
+					currentStep = 'Waiting for confirmation...';
+					progress = 90;
 				} catch (error) {
 					console.error(error);
+					loading = false;
 					return false;
 				}
 
 				return true;
 			} catch (err) {
 				console.error(err);
+				loading = false;
 				return false;
 			}
 		}
@@ -311,14 +349,16 @@
 								});
 
 								if (!hasGoneThrough) return;
-								isCreatingInContract = false;
 
 								await $updateStatusMutation.mutateAsync({
 									hackathonId: hackathon.id,
 									status: newStatus
 								});
 
+								currentStep = 'Done...';
+								progress = 100;
 								trpc.hackathon.getHackathonDetails.utils.invalidate({ hackathonId: hackathon.id });
+								loading = false;
 							}}
 						>
 							<Select.Trigger class="col-span-3">
@@ -393,7 +433,10 @@
 									status: newStatus
 								});
 
+								currentStep = 'Done...';
+								progress = 100;
 								trpc.hackathon.getHackathonDetails.utils.invalidate({ hackathonId: hackathon.id });
+								loading = false;
 							}}
 						>
 							<Select.Trigger class="col-span-3">
@@ -413,28 +456,13 @@
 	</Card>
 {/if}
 
-{#if isCreatingInContract}
-	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-		<div class="loader"></div>
-	</div>
-
-	<style>
-		.loader {
-			border: 8px solid rgba(255, 255, 255, 0.3);
-			border-top: 8px solid #ffffff;
-			border-radius: 50%;
-			width: 50px;
-			height: 50px;
-			animation: spin 1s linear infinite;
-		}
-
-		@keyframes spin {
-			0% {
-				transform: rotate(0deg);
-			}
-			100% {
-				transform: rotate(360deg);
-			}
-		}
-	</style>
-{/if}
+<LoadinOverlay
+	isOpen={loading}
+	{title}
+	{currentStep}
+	{progress}
+	error={null}
+	canCancel={progress < 75}
+	timeEstimate="30-60 seconds"
+	{transactionHash}
+/>
