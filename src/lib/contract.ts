@@ -58,15 +58,15 @@ export async function recordContribution({
 	contract
 }: {
 	_hackathonId: string;
-	_amount: string; // Amount to contribute in ETH
 	_contributor: string; // Contributor's address
+	_amount: string; // Amount to contribute in ETH
 	contract: ethers.Contract;
 }) {
 	try {
 		const tx = await contract.recordContribution(
 			_hackathonId, // First parameter: hackathon ID
 			_contributor, // Second parameter: contributor address
-			_amount // contributed amount
+			ethers.utils.parseEther(_amount) // contributed amount
 		);
 
 		console.log('Transaction sent:', {

@@ -4,7 +4,7 @@ import {
 	PUBLIC_JSONRPC_URL,
 	PUBLIC_PLATFORM_WALLET_ADDRESS
 } from '$env/static/public';
-import { announceWinner, createHackathon, recordContribution } from '$lib/contract';
+import { announceWinner, createHackathon } from '$lib/contract';
 import { contractabi } from '$lib/contractabi';
 import { type prepareRequestParameters } from '$lib/rn-utils/req';
 import { authedProcedure, router } from '$lib/server/trpc';
@@ -57,24 +57,12 @@ export const walletRouter = router({
 			z.object({
 				hackathonId: z.string(),
 				amount: z.string(),
-				contributorAddress: z.string()
+				contributorAddress: z.string(),
+				transactionHash: z.string()
 			})
 		)
 		.mutation(async ({ input, ctx }) => {
 			try {
-				const provider = new ethers.providers.JsonRpcProvider(PUBLIC_JSONRPC_URL);
-
-				const wallet = new ethers.Wallet(PLATFORM_WALLET_PRIVATEKEY, provider);
-
-				const contract = new ethers.Contract(PUBLIC_CONTRACT_ADDRESS, contractabi, wallet);
-
-				const transactionHash = await recordContribution({
-					_hackathonId: input.hackathonId,
-					_contributor: input.contributorAddress,
-					_amount: input.amount,
-					contract
-				});
-
 				// create a new db record for the contribution as well as update the hackathon total prize
 				await ctx.db
 					.insert(prizePool)
@@ -83,7 +71,7 @@ export const walletRouter = router({
 						hackathonId: input.hackathonId,
 						userId: ctx.user.id,
 						amount: input.amount,
-						transactionHash,
+						transactionHash: input.transactionHash,
 						contributedAt: new Date()
 					})
 					.catch((err) => {

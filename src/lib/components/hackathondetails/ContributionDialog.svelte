@@ -12,10 +12,12 @@
 	import { appKit } from '$lib/appKit';
 	import { z } from 'zod';
 
-	import { switchToTargetNetwork } from '$lib/contract';
+	import { recordContribution, switchToTargetNetwork } from '$lib/contract';
 	import { trpc } from '$lib/trpc';
 	import { ethers } from 'ethers';
 	import { route } from '$lib/ROUTES';
+	import { PUBLIC_CONTRACT_ADDRESS, PUBLIC_PLATFORM_WALLET_ADDRESS } from '$env/static/public';
+	import { contractabi } from '$lib/contractabi';
 
 	let {
 		hackathonId,
@@ -57,7 +59,7 @@
 		// if now connected show the rest if not ignore
 		if (appKit.getIsConnectedState()) {
 			setCurrentStep('Connecting to wallet...');
-			setProgress(25);
+			setProgress(10);
 			const provider = appKit.getWalletProvider();
 
 			if (!provider) {
@@ -73,7 +75,7 @@
 
 				// Ensure correct network
 				setCurrentStep('Switching to correct network...');
-				setProgress(50);
+				setProgress(25);
 
 				await switchToTargetNetwork(ethersProvider, 'eth');
 
@@ -105,6 +107,7 @@
 					feeAmountInCrypto: 0,
 					payerAddress: userWalletAddress,
 					platformAddress,
+					payeeIdentity: PUBLIC_PLATFORM_WALLET_ADDRESS,
 					platformInfo: {
 						address: undefined,
 						businessName: 'DevBout',
@@ -120,7 +123,7 @@
 					totalAmountInCrypto: parseFloat(amount)
 				});
 				setCurrentStep('Sending transaction...');
-				setProgress(75);
+				setProgress(50);
 				const reshandle = await handleRequestPayment({
 					payerAddress: userWalletAddress,
 					persistRequest: true,
@@ -132,17 +135,34 @@
 				setTransactionHash(reshandle.inMemoryInfo?.transactionData.hash ?? '');
 
 				setCurrentStep('Waiting for confirmation...');
+				setProgress(75);
+
+				const contract = new ethers.Contract(
+					PUBLIC_CONTRACT_ADDRESS,
+					contractabi,
+					ethersProvider!.getSigner()
+				);
+
+				const transactionHash = await recordContribution({
+					_hackathonId: hackathonId,
+					_contributor: userWalletAddress,
+					_amount: amount,
+					contract
+				});
+
+				setCurrentStep('Keeping Record in database...');
 				setProgress(90);
-				// ON CONFIRM PAYMENT DONE , CALL TRPC ENDPOINT FOR TRANSFERING MONEY FROM PLATFORM WALLET TO SMARTCONTRACT.
-				$createContribution.mutate(
+				await $createContribution.mutateAsync(
 					{
 						hackathonId,
-						amount,
-						contributorAddress: userWalletAddress
+						transactionHash,
+						contributorAddress: userWalletAddress,
+						amount
 					},
 					{
 						onSuccess: () => {
 							trpc.hackathon.getHackathonDetails.utils.invalidate({ hackathonId });
+							setTransactionHash(transactionHash);
 							setProgress(100);
 							setLoading(false);
 						}

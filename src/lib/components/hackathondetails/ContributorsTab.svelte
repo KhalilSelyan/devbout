@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { PUBLIC_PLATFORM_WALLET_ADDRESS } from '$env/static/public';
+	import { PUBLIC_CONTRACT_ADDRESS } from '$env/static/public';
 	import { useWalletState } from '$lib/appKitState.svelte';
 	import { Avatar, AvatarFallback, AvatarImage } from '$lib/components/ui/avatar';
 	import {
@@ -86,7 +86,7 @@
 			{#if walletState.address}
 				<ContributionDialog
 					hackathonId={hackathon.id}
-					platformAddress={PUBLIC_PLATFORM_WALLET_ADDRESS}
+					platformAddress={PUBLIC_CONTRACT_ADDRESS}
 					userWalletAddress={walletState.address}
 					{setLoading}
 					{setCurrentStep}
