@@ -20,11 +20,19 @@
 	let {
 		hackathonId,
 		userWalletAddress,
-		platformAddress
+		platformAddress,
+		setLoading,
+		setCurrentStep,
+		setProgress,
+		setTransactionHash
 	}: {
 		hackathonId: string;
 		userWalletAddress: string;
 		platformAddress: string;
+		setLoading: (value: boolean) => void;
+		setCurrentStep: (value: string) => void;
+		setProgress: (value: number) => void;
+		setTransactionHash: (value: string) => void;
 	} = $props();
 
 	let isDialogOpen = $state(false);
@@ -40,6 +48,7 @@
 	let createContribution = trpc.wallet.contributeToContractBalance.mutation();
 
 	async function createContributionToHackathon({ amount }: { amount: string }) {
+		setLoading(true);
 		// If not connected open the modal to connect
 		if (!appKit.getIsConnectedState()) {
 			await appKit.open();
@@ -47,10 +56,14 @@
 
 		// if now connected show the rest if not ignore
 		if (appKit.getIsConnectedState()) {
+			setCurrentStep('Connecting to wallet...');
+			setProgress(25);
 			const provider = appKit.getWalletProvider();
 
 			if (!provider) {
 				console.error('Wallet provider is not available.');
+				setLoading(false);
+
 				return false;
 			}
 
@@ -59,6 +72,9 @@
 				const ethersProvider = new ethers.providers.Web3Provider(provider);
 
 				// Ensure correct network
+				setCurrentStep('Switching to correct network...');
+				setProgress(50);
+
 				await switchToTargetNetwork(ethersProvider, 'eth');
 
 				const reqParams = prepareRequestParameters({
@@ -103,7 +119,8 @@
 					},
 					totalAmountInCrypto: parseFloat(amount)
 				});
-
+				setCurrentStep('Sending transaction...');
+				setProgress(75);
 				const reshandle = await handleRequestPayment({
 					payerAddress: userWalletAddress,
 					persistRequest: true,
@@ -112,7 +129,10 @@
 				});
 
 				console.log({ requestId: reshandle.requestId, userWalletAddress });
+				setTransactionHash(reshandle.inMemoryInfo?.transactionData.hash ?? '');
 
+				setCurrentStep('Waiting for confirmation...');
+				setProgress(90);
 				// ON CONFIRM PAYMENT DONE , CALL TRPC ENDPOINT FOR TRANSFERING MONEY FROM PLATFORM WALLET TO SMARTCONTRACT.
 				$createContribution.mutate(
 					{
@@ -123,6 +143,8 @@
 					{
 						onSuccess: () => {
 							trpc.hackathon.getHackathonDetails.utils.invalidate({ hackathonId });
+							setProgress(100);
+							setLoading(false);
 						}
 					}
 				);
@@ -130,6 +152,8 @@
 				return true;
 			} catch (err) {
 				console.error(err);
+				setLoading(false);
+
 				return false;
 			}
 		}
@@ -149,6 +173,8 @@
 			console.log({ hasGoneThrough });
 			if (!hasGoneThrough) {
 				isSubmitted = false;
+				setLoading(false);
+
 				cancel();
 			}
 		},
@@ -157,8 +183,9 @@
 				console.log('Form updated successfully');
 				trpc.hackathon.getHackathonDetails.utils.invalidate({ hackathonId });
 				isDialogOpen = false;
-				isSubmitted = false;
 			}
+			isSubmitted = false;
+			setLoading(false);
 		}
 	});
 

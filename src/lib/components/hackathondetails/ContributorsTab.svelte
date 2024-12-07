@@ -11,6 +11,7 @@
 		CardTitle
 	} from '$lib/components/ui/card';
 	import type { hackathonService } from '$lib/server/db/hackathonService';
+	import LoadinOverlay from '../LoadinOverlay.svelte';
 	import { Label } from '../ui/label';
 	import ContributionDialog from './ContributionDialog.svelte';
 
@@ -19,6 +20,26 @@
 	let { hackathon }: { hackathon: Hackathon } = $props();
 
 	const walletState = useWalletState();
+
+	let loading = $state(false);
+	let setLoading = (value: boolean) => {
+		loading = value;
+	};
+
+	let currentStep = $state('');
+	let setCurrentStep = (value: string) => {
+		currentStep = value;
+	};
+
+	let progress = $state(0);
+	let setProgress = (value: number) => {
+		progress = value;
+	};
+
+	let transactionHash = $state('');
+	let setTransactionHash = (value: string) => {
+		transactionHash = value;
+	};
 </script>
 
 {#if hackathon}
@@ -67,6 +88,10 @@
 					hackathonId={hackathon.id}
 					platformAddress={PUBLIC_PLATFORM_WALLET_ADDRESS}
 					userWalletAddress={walletState.address}
+					{setLoading}
+					{setCurrentStep}
+					{setProgress}
+					{setTransactionHash}
 				/>
 			{:else}
 				Connect your wallet
@@ -74,3 +99,14 @@
 		</CardFooter>
 	</Card>
 {/if}
+
+<LoadinOverlay
+	isOpen={loading}
+	title="Creating Hackathon"
+	{currentStep}
+	{progress}
+	error={null}
+	canCancel={progress < 75}
+	timeEstimate="30-60 seconds"
+	{transactionHash}
+/>
