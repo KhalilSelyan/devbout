@@ -38,7 +38,10 @@ export const columns: ColumnDef<NonNullable<UserRequests>[number]>[] = [
 			return renderSnippet(amountHeaderSnippet, '');
 		},
 		cell: ({ row }) => {
-			const formatter = (val: ethers.BigNumberish) => `${ethers.utils.formatUnits(val)}`;
+			const formatter = (val: ethers.BigNumberish) => {
+				if (val != null) return `${ethers.utils.formatUnits(val)}`;
+				return '0';
+			};
 			const amountCellSnippet = createRawSnippet<[string]>((getAmount) => {
 				const amount = getAmount();
 				return {
