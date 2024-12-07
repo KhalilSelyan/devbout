@@ -10,6 +10,7 @@ import { fail } from '@sveltejs/kit';
 import { submissionSchema } from '$lib/zodValidations/submissionSchema';
 import { submissionService } from '$lib/server/db/submissionService';
 import { contributionSchema } from '$lib/zodValidations/contributionSchema';
+import { createPageMetaTags } from '$lib/metaTags';
 
 export const load = (async ({ params, locals }) => {
 	const hackathonDetails = await hackathonService.getHackathonDetails(params.id);
@@ -25,12 +26,18 @@ export const load = (async ({ params, locals }) => {
 	const createTeamForm = await superValidate(zod(teamSchema));
 	const joinRequestForm = await superValidate(zod(teamJoinRequestSchema));
 
+	const pageMetaTags = createPageMetaTags({
+		title: `${hackathonDetails.name}`,
+		description: `${hackathonDetails.name} Hackathon page for DevBout`
+	});
+
 	return {
 		hackathon: hackathonDetails,
 		teams,
 		userHackathons,
 		createTeamForm,
-		joinRequestForm
+		joinRequestForm,
+		pageMetaTags: Object.freeze(pageMetaTags)
 	};
 }) satisfies PageServerLoad;
 

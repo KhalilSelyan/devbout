@@ -5,6 +5,7 @@ import { superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import type { PageServerLoad } from './$types';
 import { parse } from 'devalue';
+import { createPageMetaTags } from '$lib/metaTags';
 
 export const load = (async (event) => {
 	const hackathons = await trpcServer.hackathon.getHackathons.ssr(undefined, event);
@@ -25,7 +26,13 @@ export const load = (async (event) => {
 			useAITopics: false
 		}
 	});
-	return { hackathons, form };
+
+	const pageMetaTags = createPageMetaTags({
+		title: 'Explorer',
+		description: 'Explorer page for DevBout'
+	});
+
+	return { hackathons, form, pageMetaTags: Object.freeze(pageMetaTags) };
 }) satisfies PageServerLoad;
 
 export const actions = {

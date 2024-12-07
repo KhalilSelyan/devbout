@@ -8,6 +8,7 @@ import { route } from '$lib/ROUTES.js';
 import { zod } from 'sveltekit-superforms/adapters';
 import { trpcServer } from '$lib/server/server.js';
 import { db } from '$lib/server/db/index.js';
+import { createPageMetaTags } from '$lib/metaTags.js';
 
 export const load = async (event) => {
 	if (!event.locals.session) {
@@ -30,6 +31,10 @@ export const load = async (event) => {
 		{ address: currentUser?.walletAddress },
 		event
 	);
+	const pageMetaTags = createPageMetaTags({
+		title: 'Profile',
+		description: 'Profile page for DevBout'
+	});
 
 	return {
 		form,
@@ -38,7 +43,8 @@ export const load = async (event) => {
 		userProfileData,
 		userContributions,
 		userRequests: userRequests,
-		userHackathons
+		userHackathons,
+		pageMetaTags: Object.freeze(pageMetaTags)
 	};
 };
 

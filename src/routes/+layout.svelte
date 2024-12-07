@@ -4,15 +4,22 @@
 	import { trpc } from '$lib/trpc';
 	import { QueryClientProvider } from '@tanstack/svelte-query';
 	import { setupViewTransition } from 'sveltekit-view-transition';
-
+	import extend from 'just-extend';
+	import { MetaTags } from 'svelte-meta-tags';
 	import '../app.css';
 	import { Toaster } from '$lib/components/ui/sonner';
+	import { page } from '$app/stores';
 
 	setupViewTransition();
-
+	let metaTags = $state({});
+	$effect(() => {
+		metaTags = extend(true, {}, data.baseMetaTags, $page.data.pageMetaTags);
+	});
 	let { children, data } = $props();
 	let queryClient = trpc.hydrateFromServer(data.trpc);
 </script>
+
+<MetaTags {...metaTags} />
 
 <div>
 	<Toaster richColors position="bottom-right" />
