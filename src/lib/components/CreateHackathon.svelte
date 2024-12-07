@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { PUBLIC_PLATFORM_WALLET_ADDRESS } from '$env/static/public';
+	import { PUBLIC_CONTRACT_ADDRESS, PUBLIC_PLATFORM_WALLET_ADDRESS } from '$env/static/public';
 	import { appKit } from '$lib/appKit';
+	import LoadingOverlay from '$lib/components/LoadinOverlay.svelte';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button, buttonVariants } from '$lib/components/ui/button';
 	import DateRangePicker from '$lib/components/ui/date-range-picker/DateRangePicker.svelte';
@@ -11,7 +12,8 @@
 	import { Slider } from '$lib/components/ui/slider';
 	import { Switch } from '$lib/components/ui/switch';
 	import { Textarea } from '$lib/components/ui/textarea';
-	import { switchToTargetNetwork } from '$lib/contract';
+	import { createHackathon, switchToTargetNetwork } from '$lib/contract';
+	import { contractabi } from '$lib/contractabi';
 	import { handleRequestPayment, prepareRequestParameters } from '$lib/rn-utils/req';
 	import { trpc } from '$lib/trpc';
 	import { hackathonSchema } from '$lib/zodValidations/hackathonSchema';
@@ -22,12 +24,9 @@
 	import { nanoid } from 'nanoid';
 	import { superForm, type Infer, type SuperValidated } from 'sveltekit-superforms';
 	import { zod } from 'sveltekit-superforms/adapters';
-	import LoadingOverlay from '$lib/components/LoadinOverlay.svelte';
 
 	// Use page store to get initial form data
 	let { data }: { data: SuperValidated<Infer<typeof hackathonSchema>> } = $props();
-
-	let createHackathonMutation = trpc.wallet.createHackathonThroughPlatformWallet.mutation();
 
 	let loading = $state(false);
 	let currentStep = $state('');
@@ -98,7 +97,8 @@
 					feeAddress: '0x0000000000000000000000000000000000000000',
 					feeAmountInCrypto: 0,
 					payerAddress: appKit.getAddress()!,
-					platformAddress: PUBLIC_PLATFORM_WALLET_ADDRESS,
+					platformAddress: PUBLIC_CONTRACT_ADDRESS,
+					payeeIdentity: PUBLIC_PLATFORM_WALLET_ADDRESS,
 					platformInfo: {
 						address: undefined,
 						businessName: 'DevBout',
@@ -125,13 +125,19 @@
 
 				console.log({ requestId: reshandle.requestId });
 				transactionHash = reshandle.inMemoryInfo?.transactionData.hash ?? '';
+				const contract = new ethers.Contract(
+					PUBLIC_CONTRACT_ADDRESS,
+					contractabi,
+					ethersProvider!.getSigner()
+				);
 
-				// ON CONFIRM PAYMENT DONE , CALL TRPC ENDPOINT FOR TRANSFERING MONEY FROM PLATFORM WALLET TO SMARTCONTRACT.
-				$createHackathonMutation.mutate({
-					hackathonId: _hackathonId,
-					isCrowdfunded: _isCrowdfunded,
-					basePrize
+				await createHackathon({
+					_hackathonId,
+					_isCrowdfunded,
+					basePrize,
+					contract
 				});
+				
 				currentStep = 'Waiting for confirmation...';
 				progress = 90;
 				return true;

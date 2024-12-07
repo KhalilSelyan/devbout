@@ -23,7 +23,8 @@ export const prepareRequestParameters = ({
 	contributorInfo,
 	feeAddress,
 	feeAmountInCrypto,
-	totalAmountInCrypto
+	totalAmountInCrypto,
+	payeeIdentity = platformAddress
 }: {
 	currency: Currency;
 	platformAddress: string;
@@ -36,6 +37,7 @@ export const prepareRequestParameters = ({
 	feeAddress: string;
 	feeAmountInCrypto: number;
 	totalAmountInCrypto: number;
+	payeeIdentity?: string | undefined;
 }) => {
 	const isERC20 = currency.type === Types.RequestLogic.CURRENCY.ERC20;
 	const currencyValue = isERC20 ? currency.address : 'eth';
@@ -87,7 +89,7 @@ export const prepareRequestParameters = ({
 			expectedAmount: amount,
 			payee: {
 				type: Types.Identity.TYPE.ETHEREUM_ADDRESS,
-				value: platformAddress
+				value: payeeIdentity
 			},
 			payer: {
 				type: Types.Identity.TYPE.ETHEREUM_ADDRESS,
