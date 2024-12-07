@@ -20,7 +20,11 @@ export async function createHackathon({
 	basePrize: string;
 	contract: ethers.Contract;
 }) {
-	const tx = await contract.createHackathon(_isCrowdfunded, _hackathonId, parseFloat(basePrize));
+	const tx = await contract.createHackathon(
+		_isCrowdfunded,
+		_hackathonId,
+		ethers.utils.parseEther(basePrize)
+	);
 
 	console.log('Transaction sent:', tx.hash);
 
@@ -59,21 +63,10 @@ export async function recordContribution({
 	contract: ethers.Contract;
 }) {
 	try {
-		// Add gas estimation explicitly
-		const gasEstimate = await contract.estimateGas.recordContribution(_hackathonId, _contributor, {
-			value: ethers.utils.parseEther(_amount)
-		});
-
-		// Add 20% buffer to gas estimate
-		const gasLimit = gasEstimate.mul(120).div(100);
-
 		const tx = await contract.recordContribution(
 			_hackathonId, // First parameter: hackathon ID
 			_contributor, // Second parameter: contributor address
-			{
-				value: ethers.utils.parseEther(_amount), // ETH value to send
-				gasLimit
-			}
+			_amount // contributed amount
 		);
 
 		console.log('Transaction sent:', {
