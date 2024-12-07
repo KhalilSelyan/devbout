@@ -32,7 +32,6 @@
 	let loading = $state(false);
 	let currentStep = $state('');
 	let progress = $state(0);
-	let error: string | null = $state(null);
 	let transactionHash = $state('');
 
 	async function beforeAddHackathonToDb({
@@ -536,7 +535,7 @@
 	title="Creating Hackathon"
 	{currentStep}
 	{progress}
-	{error}
+	error={null}
 	canCancel={progress < 75}
 	timeEstimate="30-60 seconds"
 	{transactionHash}
