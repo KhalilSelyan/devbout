@@ -59,6 +59,7 @@
 
 			if (!provider) {
 				console.error('Wallet provider is not available.');
+				loading = false;
 				return false;
 			}
 
@@ -137,6 +138,7 @@
 				return true;
 			} catch (err) {
 				console.error(err);
+				loading = false;
 				return false;
 			}
 		}
@@ -167,6 +169,7 @@
 				if (!hasGoneThrough) {
 					isSubmitting = false;
 					submitButtonText = 'Create Hackathon';
+					loading = false;
 					cancel();
 				}
 			}
@@ -179,11 +182,11 @@
 				console.log('Form submitted successfully', form.data);
 				trpc.hackathon.getHackathons.utils.invalidate();
 				progress = 100;
-				loading = false;
 				submitButtonText = 'Create Hackathon';
 				isDialogOpen = false;
 			}
 
+			loading = false;
 			isSubmitting = false;
 		}
 	});
