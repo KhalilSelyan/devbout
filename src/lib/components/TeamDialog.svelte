@@ -20,6 +20,7 @@
 	import { appKit } from '$lib/appKit';
 	import { useWalletState } from '$lib/appKitState.svelte';
 	import type { User } from 'better-auth';
+	import LoadinOverlay from './LoadinOverlay.svelte';
 
 	type Teams = NonNullable<Awaited<ReturnType<typeof teamService.getHackathonTeams>>>;
 
@@ -27,9 +28,12 @@
 		$props();
 
 	let isDialogOpen = $state(false);
+	let loading = $state(false);
+	let currentStep = $state('');
+	let progress = $state(0);
+	let transactionHash = $state('');
 
 	let teamsloaded = trpc.team.getHackathonTeams.query(hackathonId, { initialData: teams });
-	let loading = $state(false);
 	let teamId = $state(nanoid());
 	const walletState = useWalletState();
 
@@ -42,10 +46,14 @@
 	}) {
 		// if now connected show the rest if not ignore
 		if (walletState.isWalletConnected) {
+			currentStep = 'Connecting to wallet...';
+			progress = 25;
+
 			const provider = appKit.getWalletProvider();
 
 			if (!provider) {
 				console.error('Wallet provider is not available.');
+				loading = false;
 				return false;
 			}
 
@@ -54,12 +62,17 @@
 				const ethersProvider = new ethers.providers.Web3Provider(provider);
 
 				// Ensure correct network
+				currentStep = 'Switching to correct network...';
+				progress = 50;
 				await switchToTargetNetwork(ethersProvider, 'eth');
 				const contract = new ethers.Contract(
 					PUBLIC_CONTRACT_ADDRESS,
 					contractabi,
 					ethersProvider!.getSigner()
 				);
+
+				currentStep = 'Sending transaction...';
+				progress = 75;
 
 				await joinHackathon({
 					_hackathonId,
@@ -101,6 +114,7 @@
 				if (form.valid) {
 					trpc.hackathon.getHackathonDetails.utils.invalidate({ hackathonId });
 					trpc.hackathon.getUserHackathons.utils.invalidate(user?.id ?? '');
+					progress = 100;
 					loading = false;
 					isDialogOpen = false;
 				}
@@ -287,3 +301,14 @@
 		</Tabs.Root>
 	</Dialog.Content>
 </Dialog.Root>
+
+<LoadinOverlay
+	isOpen={loading}
+	title="Joining Team"
+	{currentStep}
+	{progress}
+	error={null}
+	canCancel={progress < 75}
+	timeEstimate="30-60 seconds"
+	{transactionHash}
+/>

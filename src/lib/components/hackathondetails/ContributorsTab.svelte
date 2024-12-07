@@ -102,7 +102,7 @@
 
 <LoadinOverlay
 	isOpen={loading}
-	title="Creating Hackathon"
+	title="Contributing to Hackathon"
 	{currentStep}
 	{progress}
 	error={null}
