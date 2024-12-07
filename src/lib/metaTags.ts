@@ -61,12 +61,12 @@ export function createBaseMetaTags(url: URL): MetaTagsProps {
 			},
 			{
 				rel: 'mask-icon',
-				href: '/favicons/mask-icon.svg'
+				href: '/favicons/favicon.svg'
 			},
 			{
 				rel: 'alternate icon',
 				type: 'image/png',
-				href: '/favicons/favicon-32x32.png'
+				href: '/favicons/favicon-96x96.png'
 			},
 			{
 				rel: 'manifest',
