@@ -22,17 +22,27 @@
 		</CardHeader>
 		<CardContent>
 			{#if userContributions && userContributions.length > 0}
-				<ul>
+				<ul class="flex flex-col gap-2">
 					{#each userContributions as contribution}
-						<li class="flex items-center gap-2">
-							<Avatar class="h-10 w-10">
-								<AvatarImage
-									src={contribution.contributor.image}
-									alt={contribution.contributor.name}
-								/>
-								<AvatarFallback>{contribution.contributor.name.charAt(0)}</AvatarFallback>
-							</Avatar>
-							<Label>Hackathon: {contribution.hackathon.name} - {contribution.amount} ETH</Label>
+						<li>
+							<Card>
+								<CardHeader>
+									<CardTitle>{contribution.hackathon.name}</CardTitle>
+								</CardHeader>
+								<CardContent class="flex items-center gap-2">
+									<Avatar class="h-10 w-10">
+										<AvatarImage
+											src={contribution.contributor.image}
+											alt={contribution.contributor.name}
+										/>
+										<AvatarFallback>{contribution.contributor.name.charAt(0)}</AvatarFallback>
+									</Avatar>
+									<Label>
+										You contributed <em>{contribution.amount}</em> ETH to the hackathon, it is well appreciated
+										by all participants.</Label
+									>
+								</CardContent>
+							</Card>
 						</li>
 					{/each}
 				</ul>
