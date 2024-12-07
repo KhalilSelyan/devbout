@@ -1,10 +1,22 @@
 # DevBout - Decentralized Hackathon Platform powered by Request Network
 
+> Powered by Request Network 🚀
+
 ## Overview
 
 DevBout is an innovative decentralized hackathon platform that leverages Request Network's payment infrastructure and custom smart contracts to create a seamless, transparent hackathon experience. Built with SvelteKit and blockchain technology, it provides end-to-end management of hackathon events, from creation to prize distribution.
 
 ## Complete Platform Flow
+
+```mermaid
+graph LR
+    A[Create Hackathon] -->|RN Payment| B[Smart Contract]
+    B --> C[Participant Addition]
+    C --> D[Submissions]
+    D --> E[Judging]
+    E --> F[Prize Distribution]
+    F -->|RN ETH Fee Proxy| G[Winners]
+```
 
 ### 1. Hackathon Creation
 
@@ -60,16 +72,20 @@ DevBout is an innovative decentralized hackathon platform that leverages Request
 - Comprehensive dashboard for organizers
 - Achievement badge system
 
-## Technology Stack
+## 🛠 Technology Stack
 
 ### Core Technologies
 
-- **Frontend**: SvelteKit
-- **Backend**: Node.js
-- **Database**: PostgreSQL with Drizzle ORM
-- **Blockchain**: Ethereum (ethers.js)
-- **Payments**: Request Network
-- **UI**: TailwindCSS, Bits UI
+```json
+{
+	"frontend": "SvelteKit",
+	"backend": "Node.js + tRPC",
+	"database": "PostgreSQL + Drizzle ORM",
+	"blockchain": "Ethereum (Sepolia), Ethers + appKit",
+	"payments": "Request Network",
+	"ui": "TailwindCSS + Bits UI"
+}
+```
 
 ### Key Integrations
 
@@ -79,7 +95,7 @@ DevBout is an innovative decentralized hackathon platform that leverages Request
 - tRPC API layer
 - Superforms form handling
 
-## Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
 
@@ -116,14 +132,25 @@ pnpm dev
 - Transaction confirmation checks
 - Prize distribution verification
 
-## Contributing
+## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Submit a Pull Request
+1. Fork repository
+2. Create feature branch
+
+   ```bash
+   git checkout -b feature/amazing-feature
+   ```
+
+3. Commit changes
+
+   ```bash
+   git commit -m 'Add amazing feature'
+   ```
+
+4. Push & create PR
 
 ---
 
 Built for the Request Network Hackathon by [KhalilSelyan](https://github.com/khalilselyan)
 
-For detailed documentation, visit our [Wiki](https://github.com/khalilselyan/devbout/wiki).
+[Report Bug](https://github.com/khalilselyan/devbout/issues) | [Request Feature](https://github.com/khalilselyan/devbout/issues)
