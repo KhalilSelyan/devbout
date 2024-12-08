@@ -139,22 +139,19 @@ export async function announceWinner({
 // Function to execute batch payments for winners
 export async function executeBatchPayments({
 	_hackathonId,
-	requestDetails,
+	metaDetails,
 	feeAddress,
 	contract
 }: {
 	_hackathonId: string;
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	requestDetails: any[];
+	metaDetails: MetaDetail[];
 	feeAddress: string;
-	skipFeeUSDLimit: boolean;
 	contract: ethers.Contract;
 }) {
-	console.log({ _hackathonId, requestDetails, contract });
+	console.log({ _hackathonId, metaDetails, contract });
 
 	// executeBatchPayments(string,(uint256,(address,uint256,address[],bytes,uint256,uint256,uint256)[])[],address[][],address)
-
-	const metaDetails: MetaDetail[] = [{ paymentNetworkId: 3, requestDetails }];
 
 	const pathsToUSD: string[][] = [];
 	const tx = await contract.executeBatchPayments(_hackathonId, metaDetails, pathsToUSD, feeAddress);
