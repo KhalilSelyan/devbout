@@ -117,7 +117,8 @@
 				<div class="flex items-center">
 					<DollarSign class="mr-2 h-4 w-4" />
 					<span class="text-sm">
-						Prize Pool: {singlehackathon.prizePool ?? 'Undefined'} ETH
+						Prize Pool: {singlehackathon.prizePool ?? 'Undefined'}
+						{singlehackathon.paymentType === 'ERC20' ? 'FAU' : 'ETH'}
 					</span>
 				</div>
 			</div>

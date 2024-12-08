@@ -29,6 +29,7 @@
 	import { contractabi } from '$lib/contractabi';
 	import { handleRequestPayment, prepareRequestParameters } from '$lib/rn-utils/req';
 	import LoadinOverlay from '../LoadinOverlay.svelte';
+	import { currencies } from '$lib/rn-utils/currency';
 
 	type Hackathon = Awaited<ReturnType<typeof hackathonService.getHackathonDetails>>;
 
@@ -56,8 +57,6 @@
 	const isHackathonCreator = $derived.by(() => {
 		if (hackathon) return hackathon.organizer.id === user?.id;
 	});
-
-	let createHackathonMutation = trpc.wallet.createHackathonThroughPlatformWallet.mutation();
 
 	async function addHackathonToContract({
 		_hackathonId,
@@ -109,16 +108,7 @@
 						taxRegistration: ''
 					},
 					createdWith: 'DevBout',
-					currency: {
-						decimals: 18,
-						hash: '',
-						id: '',
-						network: 'sepolia',
-						symbol: 'ETH',
-						type: 'ETH',
-						address: 'eth',
-						name: 'sepolia'
-					},
+					currency: hackathon?.paymentType === 'ERC20' ? currencies[1] : currencies[0],
 					feeAddress: '0x0000000000000000000000000000000000000000',
 					feeAmountInCrypto: 0,
 					payerAddress: appKit.getAddress()!,
@@ -163,6 +153,7 @@
 					_hackathonId,
 					_isCrowdfunded,
 					basePrize,
+					typeOfPayment: hackathon?.paymentType === 'ERC20' ? 0 : 1,
 					contract
 				});
 
@@ -270,11 +261,11 @@
 			<div>
 				<h3 class="mb-2 text-lg font-semibold">Prize Pool</h3>
 				<div class="flex items-center space-x-2">
-					<span>Eth</span>
+					<span>{hackathon.paymentType === 'ERC20' ? 'FAU' : 'ETH'}</span>
 					<span class="text-2xl font-bold"> {(hackathon.prizePool ?? '0').toLocaleString()}</span>
 				</div>
 				<p class="mt-1 text-sm text-gray-500">
-					Base Prize: <span>Eth</span>
+					Base Prize: <span>{hackathon.paymentType === 'ERC20' ? 'FAU' : 'ETH'}</span>
 					{(hackathon.basePrize ?? '0').toLocaleString()}
 				</p>
 			</div>

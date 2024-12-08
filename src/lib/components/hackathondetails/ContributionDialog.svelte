@@ -18,9 +18,12 @@
 	import { route } from '$lib/ROUTES';
 	import { PUBLIC_CONTRACT_ADDRESS, PUBLIC_PLATFORM_WALLET_ADDRESS } from '$env/static/public';
 	import { contractabi } from '$lib/contractabi';
+	import type { hackathonService } from '$lib/server/db/hackathonService';
+	import { currencies } from '$lib/rn-utils/currency';
+	type Hackathon = NonNullable<Awaited<ReturnType<typeof hackathonService.getHackathonDetails>>>;
 
 	let {
-		hackathonId,
+		hackathon,
 		userWalletAddress,
 		platformAddress,
 		setLoading,
@@ -28,7 +31,7 @@
 		setProgress,
 		setTransactionHash
 	}: {
-		hackathonId: string;
+		hackathon: Hackathon;
 		userWalletAddress: string;
 		platformAddress: string;
 		setLoading: (value: boolean) => void;
@@ -44,7 +47,7 @@
 	const initialData: z.infer<typeof contributionSchema> = {
 		amount: '0',
 		message: '',
-		hackathonId
+		hackathonId: hackathon.id
 	};
 
 	let createContribution = trpc.wallet.contributeToContractBalance.mutation();
@@ -93,16 +96,7 @@
 						taxRegistration: ''
 					},
 					createdWith: 'DevBout',
-					currency: {
-						decimals: 18,
-						hash: '',
-						id: '',
-						network: 'sepolia',
-						symbol: 'ETH',
-						type: 'ETH',
-						address: 'eth',
-						name: 'sepolia'
-					},
+					currency: hackathon.paymentType === 'ERC20' ? currencies[1] : currencies[0],
 					feeAddress: '0x0000000000000000000000000000000000000000',
 					feeAmountInCrypto: 0,
 					payerAddress: userWalletAddress,
@@ -144,7 +138,7 @@
 				);
 
 				const transactionHash = await recordContribution({
-					_hackathonId: hackathonId,
+					_hackathonId: hackathon.id,
 					_contributor: userWalletAddress,
 					_amount: amount,
 					contract
@@ -154,14 +148,14 @@
 				setProgress(90);
 				await $createContribution.mutateAsync(
 					{
-						hackathonId,
+						hackathonId: hackathon.id,
 						transactionHash,
 						contributorAddress: userWalletAddress,
 						amount
 					},
 					{
 						onSuccess: () => {
-							trpc.hackathon.getHackathonDetails.utils.invalidate({ hackathonId });
+							trpc.hackathon.getHackathonDetails.utils.invalidate({ hackathonId: hackathon.id });
 							setTransactionHash(transactionHash);
 							setProgress(100);
 							setLoading(false);
@@ -201,7 +195,7 @@
 		onUpdated: ({ form }) => {
 			if (form.valid) {
 				console.log('Form updated successfully');
-				trpc.hackathon.getHackathonDetails.utils.invalidate({ hackathonId });
+				trpc.hackathon.getHackathonDetails.utils.invalidate({ hackathonId: hackathon.id });
 				isDialogOpen = false;
 			}
 			isSubmitted = false;
@@ -247,16 +241,16 @@
 		<form
 			use:enhance
 			method="POST"
-			action={route('createContribution /hackathons/[id]', { id: hackathonId })}
+			action={route('createContribution /hackathons/[id]', { id: hackathon.id })}
 			class="flex flex-col gap-6"
 		>
 			<div class="flex flex-col gap-2">
-				<label for="amount">Amount in ETH</label>
+				<label for="amount">Amount in {hackathon.paymentType === 'ERC20' ? 'FAU' : 'ETH'}</label>
 				<Input
 					id="amount"
 					name="amount"
 					bind:value={$form.amount}
-					placeholder={`Enter amount in ETH`}
+					placeholder={`Enter amount in ${hackathon.paymentType === 'ERC20' ? 'FAU' : 'ETH'}`}
 				/>
 				{#if $errors.amount}
 					<div class="text-destructive">{$errors.amount}</div>

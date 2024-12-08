@@ -73,7 +73,8 @@
 								</div>
 							</div>
 							<span class="font-bold">
-								{contributor.amount} ETH
+								{contributor.amount}
+								{hackathon.paymentType === 'ERC20' ? 'FAU' : 'ETH'}
 							</span>
 						</li>
 					{/each}
@@ -85,7 +86,7 @@
 		<CardFooter>
 			{#if walletState.address}
 				<ContributionDialog
-					hackathonId={hackathon.id}
+					{hackathon}
 					platformAddress={PUBLIC_CONTRACT_ADDRESS}
 					userWalletAddress={walletState.address}
 					{setLoading}

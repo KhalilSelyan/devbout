@@ -38,8 +38,9 @@
 										<AvatarFallback>{contribution.contributor.name.charAt(0)}</AvatarFallback>
 									</Avatar>
 									<Label>
-										You contributed <em>{contribution.amount}</em> ETH to the hackathon, it is well appreciated
-										by all participants.</Label
+										You contributed <em>{contribution.amount}</em>
+										{contribution.hackathon.paymentType === 'ERC20' ? 'FAU' : 'ETH'} to the hackathon,
+										it is well appreciated by all participants.</Label
 									>
 								</CardContent>
 							</Card>

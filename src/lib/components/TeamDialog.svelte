@@ -112,7 +112,7 @@
 			onUpdated: ({ form }) => {
 				console.log({ form });
 				if (form.valid) {
-					trpc.hackathon.utils.invalidate();
+					trpc.hackathon.getHackathonDetails.utils.invalidate({ hackathonId });
 
 					progress = 100;
 					loading = false;

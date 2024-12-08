@@ -26,7 +26,11 @@
 									dateStyle: 'full'
 								})}
 							</Label>
-							<Label><strong>Prize Money:</strong> ETH {hackathon.basePrize}</Label>
+							<Label
+								><strong>Prize Money:</strong>
+								{hackathon.paymentType === 'ERC20' ? 'FAU' : 'ETH'}
+								{hackathon.basePrize}</Label
+							>
 							<Label>
 								<strong>Winning Team:</strong>
 								{hackathon.teams.find((team) => team.isWinner)?.name ?? 'No Winner yet'}
