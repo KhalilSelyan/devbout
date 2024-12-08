@@ -6,6 +6,7 @@ import { TRPCError } from '@trpc/server';
 // Zod schemas for validation
 const HackathonStatusEnum = z.enum(['DRAFT', 'OPEN', 'ONGOING', 'JUDGING', 'COMPLETED', 'PAID']);
 const FundingTypeEnum = z.enum(['FULLY_FUNDED', 'CROWDFUNDED', 'HYBRID']);
+const PaymentTypeEnum = z.enum(['ERC20', 'ETH']);
 
 const HackathonCreateSchema = z.object({
 	hackathonid: z.string().min(1),
@@ -17,6 +18,7 @@ const HackathonCreateSchema = z.object({
 	maxTeamSize: z.number().int().min(1),
 	prizePool: z.string().optional().default('0'),
 	basePrize: z.string().optional().default('0'),
+	paymentType: PaymentTypeEnum,
 	fundingType: FundingTypeEnum,
 	status: HackathonStatusEnum.optional().default('DRAFT'),
 	judgingCriteria: z.array(z.object({ name: z.string(), weight: z.number() })).optional(),
@@ -50,6 +52,7 @@ export const hackathonRouter = router({
 		return await hackathonService.createHackathon({
 			...input,
 			id: input.hackathonid,
+
 			organizerId: ctx.user.id
 		});
 	}),
@@ -85,7 +88,7 @@ export const hackathonRouter = router({
 			// Optional: Add authorization check
 			const existingHackathon = await hackathonService.getHackathonDetails(input.hackathonId);
 
-			if (existingHackathon?.organizerId !== ctx.user.id) {
+			if (existingHackathon?.organizerId !== ctx.user.id && input.status !== 'PAID') {
 				throw new Error('Unauthorized to update this hackathon status');
 			}
 
