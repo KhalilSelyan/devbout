@@ -20,6 +20,7 @@ export const load = (async (event) => {
 			minTeamSize: '1',
 			maxTeamSize: '5',
 			basePrize: '0',
+			currencyType: 'ETH',
 			status: 'DRAFT' as 'DRAFT' | 'OPEN' | 'ONGOING' | 'COMPLETED',
 			fundingType: 'FULLY_FUNDED' as 'FULLY_FUNDED' | 'CROWDFUNDED' | 'HYBRID',
 			judgingCriteria: [{ name: 'Innovation', weight: 40 }],
@@ -39,6 +40,9 @@ export const actions = {
 	default: async (event) => {
 		const formData = parse((await event.request.formData()).get('__superform_json') as string);
 		const form = await superValidate(formData, zod(hackathonSchema));
+
+		console.log({ formData, form });
+		console.log(form.errors);
 
 		if (!form.valid) {
 			console.log('Form validation failed:', {
@@ -61,14 +65,17 @@ export const actions = {
 		}
 
 		try {
-			await hackathonService.createHackathon({
+			const created = await hackathonService.createHackathon({
 				...form.data,
 				prizePool: form.data.basePrize,
 				minTeamSize: Number(form.data.minTeamSize),
 				maxTeamSize: Number(form.data.maxTeamSize),
 				organizerId: event.locals.user.id,
+				paymentType: form.data.currencyType,
 				id: form.data.hackathonid
 			});
+
+			console.log({ created });
 
 			return {
 				form,

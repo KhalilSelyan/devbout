@@ -13,17 +13,20 @@ export async function createHackathon({
 	_hackathonId,
 	_isCrowdfunded,
 	basePrize,
+	typeOfPayment,
 	contract
 }: {
 	_hackathonId: string;
 	_isCrowdfunded: boolean;
 	basePrize: string;
+	typeOfPayment: number;
 	contract: ethers.Contract;
 }) {
 	const tx = await contract.createHackathon(
 		_isCrowdfunded,
 		_hackathonId,
-		ethers.utils.parseEther(basePrize)
+		ethers.utils.parseEther(basePrize),
+		typeOfPayment
 	);
 
 	console.log('Transaction sent:', tx.hash);

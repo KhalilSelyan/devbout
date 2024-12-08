@@ -209,7 +209,7 @@
 
 <LoadinOverlay
 	isOpen={loading}
-	title="Creating Hackathon"
+	title="Announcing Winners"
 	{currentStep}
 	{progress}
 	error={null}

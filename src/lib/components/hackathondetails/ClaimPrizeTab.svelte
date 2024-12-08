@@ -20,6 +20,7 @@
 	import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 	import { goto } from '$app/navigation';
 	import { route } from '$lib/ROUTES';
+	import { currencies } from '$lib/rn-utils/currency';
 
 	let {
 		hackathon,
@@ -71,6 +72,8 @@
 
 				const memberPrize = +hackathon.prizePool! / winningTeam.members.length;
 
+				console.log({ memberPrize });
+
 				let allReqParams: Array<ReturnType<typeof prepareRequestParameters> | null> = [];
 
 				teamWallets.map((wallet) => {
@@ -101,16 +104,7 @@
 							taxRegistration: wallet.user.taxRegistration ?? ''
 						},
 						createdWith: 'DevBout',
-						currency: {
-							decimals: 18,
-							hash: '',
-							id: '',
-							network: 'sepolia',
-							symbol: 'ETH',
-							type: 'ETH',
-							address: 'eth',
-							name: 'sepolia'
-						},
+						currency: hackathon.paymentType === 'ERC20' ? currencies[1] : currencies[0],
 						feeAddress: '0x0000000000000000000000000000000000000000',
 						feeAmountInCrypto: 0,
 						payerAddress: PUBLIC_PLATFORM_WALLET_ADDRESS,

@@ -44,10 +44,28 @@ export const contractabi = [
 		inputs: [
 			{ name: '_isCrowdfunded', type: 'bool', internalType: 'bool' },
 			{ name: 'hackathonId', type: 'string', internalType: 'string' },
-			{ name: 'basePrize', type: 'uint256', internalType: 'uint256' }
+			{ name: 'basePrize', type: 'uint256', internalType: 'uint256' },
+			{
+				name: 'typeOfPayment',
+				type: 'uint8',
+				internalType: 'enum HackathonPrizeManagement.TypeOfPayment'
+			}
 		],
 		outputs: [],
 		stateMutability: 'nonpayable'
+	},
+	{
+		type: 'function',
+		name: 'erc20FeeProxy',
+		inputs: [],
+		outputs: [
+			{
+				name: '',
+				type: 'address',
+				internalType: 'contract IERC20FeeProxy'
+			}
+		],
+		stateMutability: 'view'
 	},
 	{
 		type: 'function',
@@ -159,6 +177,11 @@ export const contractabi = [
 				name: 'contributions',
 				type: 'uint256',
 				internalType: 'uint256'
+			},
+			{
+				name: 'typeOfPayment',
+				type: 'uint8',
+				internalType: 'enum HackathonPrizeManagement.TypeOfPayment'
 			},
 			{ name: 'isCrowdfunded', type: 'bool', internalType: 'bool' },
 			{

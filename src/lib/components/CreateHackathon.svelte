@@ -14,6 +14,7 @@
 	import { Textarea } from '$lib/components/ui/textarea';
 	import { createHackathon, switchToTargetNetwork } from '$lib/contract';
 	import { contractabi } from '$lib/contractabi';
+	import { currencies } from '$lib/rn-utils/currency';
 	import { handleRequestPayment, prepareRequestParameters } from '$lib/rn-utils/req';
 	import { trpc } from '$lib/trpc';
 	import { hackathonSchema } from '$lib/zodValidations/hackathonSchema';
@@ -32,6 +33,7 @@
 	let currentStep = $state('');
 	let progress = $state(0);
 	let transactionHash = $state('');
+	let selectedCurrency = $state<(typeof currencies)[0]>(currencies[0]);
 
 	async function beforeAddHackathonToDb({
 		_hackathonId,
@@ -84,16 +86,7 @@
 						taxRegistration: ''
 					},
 					createdWith: 'DevBout',
-					currency: {
-						decimals: 18,
-						hash: '',
-						id: '',
-						network: 'sepolia',
-						symbol: 'ETH',
-						type: 'ETH',
-						address: 'eth',
-						name: 'sepolia'
-					},
+					currency: selectedCurrency,
 					feeAddress: '0x0000000000000000000000000000000000000000',
 					feeAmountInCrypto: 0,
 					payerAddress: appKit.getAddress()!,
@@ -135,9 +128,10 @@
 					_hackathonId,
 					_isCrowdfunded,
 					basePrize,
+					typeOfPayment: selectedCurrency.type === 'ERC20' ? 0 : 1,
 					contract
 				});
-				
+
 				currentStep = 'Waiting for confirmation...';
 				progress = 90;
 				return true;
@@ -172,6 +166,7 @@
 				});
 
 				if (!hasGoneThrough) {
+					console.log('are we here2');
 					isSubmitting = false;
 					submitButtonText = 'Create Hackathon';
 					loading = false;
@@ -374,9 +369,44 @@
 			</div>
 
 			<div class="flex flex-col gap-2">
+				<label for="currencyType">Currency Type</label>
+				<div class="relative flex items-center gap-2">
+					<Select.Root
+						type="single"
+						onValueChange={(value) => {
+							selectedCurrency = currencies.find(
+								(cur: (typeof currencies)[0]) => cur.type === value
+							);
+						}}
+						name="currencyType"
+						bind:value={$form.currencyType}
+					>
+						<Select.Trigger>
+							<div class="flex items-center gap-2">
+								{$form.currencyType
+									? $form.currencyType
+											.split('_')
+											.map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+											.join(' ')
+									: 'Select currency type'}
+							</div>
+						</Select.Trigger>
+						<Select.Content>
+							{#each currencies as currency}
+								<Select.Item value={currency.type}>{currency.type}</Select.Item>
+							{/each}
+						</Select.Content>
+					</Select.Root>
+				</div>
+				{#if $errors.basePrize}
+					<div class="text-destructive">{$errors.basePrize}</div>
+				{/if}
+			</div>
+
+			<div class="flex flex-col gap-2">
 				<label for="basePrize">Base Prize</label>
 				<div class="relative flex items-center gap-2">
-					<Label>Eth</Label>
+					<Label>{selectedCurrency.symbol}</Label>
 					<Input
 						id="basePrize"
 						placeholder="Enter base prize amount"

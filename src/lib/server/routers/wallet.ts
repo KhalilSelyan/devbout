@@ -4,7 +4,7 @@ import {
 	PUBLIC_JSONRPC_URL,
 	PUBLIC_PLATFORM_WALLET_ADDRESS
 } from '$env/static/public';
-import { announceWinner, createHackathon } from '$lib/contract';
+import { announceWinner } from '$lib/contract';
 import { contractabi } from '$lib/contractabi';
 import { type prepareRequestParameters } from '$lib/rn-utils/req';
 import { authedProcedure, router } from '$lib/server/trpc';
@@ -18,40 +18,6 @@ import { RequestNetwork, Types } from '@requestnetwork/request-client.js';
 import { EthereumPrivateKeySignatureProvider } from '@requestnetwork/epk-signature';
 
 export const walletRouter = router({
-	createHackathonThroughPlatformWallet: authedProcedure
-		.input(
-			z.object({
-				hackathonId: z.string(),
-				basePrize: z.string(),
-				isCrowdfunded: z.boolean()
-			})
-		)
-		.mutation(async ({ input }) => {
-			try {
-				const provider = new ethers.providers.JsonRpcProvider(PUBLIC_JSONRPC_URL);
-
-				const wallet = new ethers.Wallet(PLATFORM_WALLET_PRIVATEKEY, provider);
-
-				const contract = new ethers.Contract(PUBLIC_CONTRACT_ADDRESS, contractabi, wallet);
-
-				await createHackathon({
-					_hackathonId: input.hackathonId,
-					_isCrowdfunded: input.isCrowdfunded,
-					basePrize: input.basePrize,
-					contract
-				});
-
-				console.log(
-					`Successfully transferred ${input.basePrize} wei to ${PUBLIC_PLATFORM_WALLET_ADDRESS}`
-				);
-			} catch (error) {
-				throw new TRPCError({
-					code: 'INTERNAL_SERVER_ERROR',
-					message: 'Failed to create hackathon',
-					cause: error
-				});
-			}
-		}),
 	contributeToContractBalance: authedProcedure
 		.input(
 			z.object({
@@ -191,10 +157,28 @@ export const walletRouter = router({
 				// @ts-expect-error it goes through
 				const request = await requestNetwork.createRequest(input.reqParams);
 
+				console.log(request.inMemoryInfo);
+
+				const extensions = request.inMemoryInfo?.requestData.extensions;
+				const salt =
+					extensions && extensions['pn-eth-fee-proxy-contract']
+						? extensions['pn-eth-fee-proxy-contract'].values.salt
+						: extensions && extensions['pn-erc20-fee-proxy-contract']
+							? extensions['pn-erc20-fee-proxy-contract']?.values.salt
+							: undefined;
+
+				const requestNetworkPersister = new RequestNetwork({
+					nodeConnectionConfig: {
+						baseURL: 'https://sepolia.gateway.request.network' // Ensure this matches your node
+					},
+					signatureProvider: epkSignatureProvider
+				});
+
+				requestNetworkPersister.persistRequest(request);
+
 				return {
 					requestId: request.requestId,
-					salt: request.inMemoryInfo?.requestData.extensions['pn-eth-fee-proxy-contract'].values
-						.salt
+					salt
 				};
 			} catch (error) {
 				throw new TRPCError({

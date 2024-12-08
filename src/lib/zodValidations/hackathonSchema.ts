@@ -21,6 +21,9 @@ export const hackathonSchema = z
 		status: z.enum(['DRAFT', 'OPEN', 'ONGOING', 'JUDGING', 'COMPLETED'], {
 			errorMap: () => ({ message: 'Invalid status type selected' })
 		}),
+		currencyType: z.enum(['ERC20', 'ETH'], {
+			errorMap: () => ({ message: 'Invalid payment type selected' })
+		}),
 		basePrize: z.string().refine(
 			(value) => {
 				const numberValue = parseFloat(value);

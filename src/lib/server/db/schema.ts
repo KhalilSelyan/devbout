@@ -11,6 +11,7 @@ import {
 } from 'drizzle-orm/pg-core';
 // PostgreSQL Enums
 export const fundingTypeEnum = pgEnum('funding_type', ['FULLY_FUNDED', 'CROWDFUNDED', 'HYBRID']);
+export const paymentTypeEnum = pgEnum('payment_type', ['ERC20', 'ETH']);
 export const hackathonStatusEnum = pgEnum('hackathon_status', [
 	'DRAFT',
 	'OPEN',
@@ -135,6 +136,7 @@ export const hackathon = pgTable(
 		contractAddress: text('contractAddress'), // store the deployed contract address
 		chainId: text('chainId'), // track which network it's on
 		fundingType: fundingTypeEnum('fundingType').notNull(),
+		paymentType: paymentTypeEnum('paymentType').notNull(),
 		status: hackathonStatusEnum('status').notNull().default('DRAFT'),
 		judgingCriteria: json('judgingCriteria').$type<{ name: string; weight: number }[]>(),
 		aiGeneratedTopics: json('aiGeneratedTopics').$type<string[]>(),
