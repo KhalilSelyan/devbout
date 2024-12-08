@@ -198,7 +198,7 @@
 						_hackathonId: hackathon.id,
 						_winnerAddress: recipient,
 						_paymentRef: ethers.utils.hexlify(ethers.utils.toUtf8Bytes(_paymentRefs[index])),
-						_wonAmount: ethers.utils.parseUnits(amounts[index].toString(), 18),
+						_wonAmount: ethers.utils.parseEther(amounts[index].toString()),
 						contract
 					};
 
