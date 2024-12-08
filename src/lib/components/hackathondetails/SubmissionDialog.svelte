@@ -5,10 +5,11 @@
 	import { Label } from '$lib/components/ui/label';
 	import { Textarea } from '$lib/components/ui/textarea';
 	import { route } from '$lib/ROUTES';
-	import type { hackathonService } from '$lib/server/db/hackathonService';
+	import type { trpcServer } from '$lib/server/server';
 	import { trpc } from '$lib/trpc';
 	import { cn } from '$lib/utils';
 	import { submissionSchema } from '$lib/zodValidations/submissionSchema';
+	import type { inferAsyncReturnType } from '@trpc/server';
 	import { superForm } from 'sveltekit-superforms';
 	import { zod } from 'sveltekit-superforms/adapters';
 
@@ -17,12 +18,12 @@
 		userHackathons
 	}: {
 		hackathonId: string;
-		userHackathons: Awaited<ReturnType<typeof hackathonService.getUserHackathons>>;
+		userHackathons: inferAsyncReturnType<typeof trpcServer.hackathon.getUserHackathons.ssr>;
 	} = $props();
 	let isDialogOpen = $state(false);
 	let isSubmitted = $state(false);
 	const currentTeamId =
-		userHackathons.find((hackathon) => hackathon.id === hackathonId)?.teams[0].id || '';
+		userHackathons?.find((hackathon) => hackathon.id === hackathonId)?.teams[0].id || '';
 
 	// Initialize form data
 	const initialData = {

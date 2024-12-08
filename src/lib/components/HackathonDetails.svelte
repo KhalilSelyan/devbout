@@ -5,12 +5,12 @@
 	import type { teamService } from '$lib/server/db/teamService';
 	import { trpc } from '$lib/trpc';
 	import type { User } from 'better-auth';
+	import ClaimPrizeTab from './hackathondetails/ClaimPrizeTab.svelte';
 	import ContributorsTab from './hackathondetails/ContributorsTab.svelte';
 	import OverviewTab from './hackathondetails/OverviewTab.svelte';
 	import SubmissionsTab from './hackathondetails/SubmissionsTab.svelte';
 	import TeamsTab from './hackathondetails/TeamsTab.svelte';
 	import WinnerSelectionTab from './hackathondetails/WinnerSelectionTab.svelte';
-	import ClaimPrizeTab from './hackathondetails/ClaimPrizeTab.svelte';
 
 	type Hackathon = NonNullable<Awaited<ReturnType<typeof hackathonService.getHackathonDetails>>>;
 	type Teams = NonNullable<Awaited<ReturnType<typeof teamService.getHackathonTeams>>>;
@@ -31,6 +31,10 @@
 		{ hackathonId: hackathon.id },
 		{ initialData: hackathon }
 	);
+
+	let userHackathonsQuery = trpc.hackathon.getUserHackathons.query(user?.id, {
+		initialData: userHackathons
+	});
 
 	let currentTab = $state('overview');
 
@@ -99,11 +103,11 @@
 				<TeamsTab hackathon={queryData} {teams} {user} />
 			</TabsContent>
 			<TabsContent value="submissions">
-				<SubmissionsTab hackathon={queryData} {userHackathons} />
+				<SubmissionsTab hackathon={queryData} userHackathons={$userHackathonsQuery.data} />
 			</TabsContent>
-			{#if isOrganizer && isJudgingPhase}
+			{#if isOrganizer && isJudgingPhase && user}
 				<TabsContent value="winSelection">
-					<WinnerSelectionTab {teams} hackathon={queryData} />
+					<WinnerSelectionTab {teams} {user} hackathon={queryData} {setCurrentTab} />
 				</TabsContent>
 			{/if}
 			{#if isMemberOfWinningTeam && user && isTeamLeader && isHackathonCompleted && queryData}

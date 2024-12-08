@@ -8,8 +8,10 @@
 		CardHeader,
 		CardTitle
 	} from '$lib/components/ui/card';
-	import { Clock, Github, LinkIcon } from 'lucide-svelte';
 	import type { hackathonService } from '$lib/server/db/hackathonService';
+	import type { trpcServer } from '$lib/server/server';
+	import type { inferAsyncReturnType } from '@trpc/server';
+	import { Clock, Github, LinkIcon } from 'lucide-svelte';
 	import SubmissionDialog from './SubmissionDialog.svelte';
 
 	type Hackathon = Awaited<ReturnType<typeof hackathonService.getHackathonDetails>>;
@@ -19,10 +21,10 @@
 		userHackathons
 	}: {
 		hackathon: Hackathon;
-		userHackathons: Awaited<ReturnType<typeof hackathonService.getUserHackathons>>;
+		userHackathons: inferAsyncReturnType<typeof trpcServer.hackathon.getUserHackathons.ssr>;
 	} = $props();
 
-	let isUserHackathon = userHackathons.some((hackathon) => hackathon.id === hackathon.id);
+	let isUserHackathon = userHackathons?.some((hackathon) => hackathon.id === hackathon.id);
 </script>
 
 {#if hackathon}

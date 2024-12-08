@@ -103,7 +103,7 @@ export const hackathonRouter = router({
 	}),
 
 	// Get user's hackathons with their teams
-	getUserHackathons: authedProcedure.input(z.string()).query(async ({ input }) => {
+	getUserHackathons: authedProcedure.input(z.string().optional()).query(async ({ input }) => {
 		try {
 			const hackathons = await hackathonService.getUserHackathons(input);
 			return hackathons;

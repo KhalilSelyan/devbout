@@ -13,19 +13,35 @@
 	import { contractabi } from '$lib/contractabi';
 	import { appKit } from '$lib/appKit';
 	import { useWalletState } from '$lib/appKitState.svelte';
+	import LoadinOverlay from '../LoadinOverlay.svelte';
+	import type { User } from 'better-auth';
 
 	type Teams = NonNullable<Awaited<ReturnType<typeof teamService.getHackathonTeams>>>;
 	type Hackathon = Awaited<ReturnType<typeof hackathonService.getHackathonDetails>>;
+	let loading = $state(false);
+	let currentStep = $state('');
+	let progress = $state(0);
+	let transactionHash = $state('');
 
-	let { teams, hackathon }: { teams: Teams; hackathon: Hackathon } = $props();
+	let {
+		teams,
+		hackathon,
+		setCurrentTab,
+		user
+	}: {
+		teams: Teams;
+		hackathon: Hackathon;
+		setCurrentTab: (
+			tab: 'overview' | 'teams' | 'submissions' | 'contributors' | 'claimPrize' | 'winSelection'
+		) => void;
+		user: User;
+	} = $props();
 	let selectedWinningTeam: Teams[number] | null = $state(null);
 
 	let teamAddresses = trpc.team.getTeamMemberWalletAddresses.mutation();
 	let announceWinnerMutation = trpc.wallet.announceWinner.mutation();
 	const walletState = useWalletState();
 	let updateStatusMutation = trpc.hackathon.updateHackathonStatus.mutation();
-
-	let loadingState: { title: string; description: number } | null = $state(null);
 
 	const updateHackathonStateInContract = async ({
 		hackathon,
@@ -75,6 +91,8 @@
 						{
 							onSuccess: () => {
 								trpc.hackathon.getHackathonDetails.utils.invalidate({ hackathonId: hackathon.id });
+								trpc.hackathon.getUserHackathons.utils.invalidate(user.id);
+								setCurrentTab('overview');
 							}
 						}
 					);
@@ -106,12 +124,15 @@
 				teamId: selectedWinningTeam.id
 			});
 			try {
+				loading = true;
+				currentStep = 'Preparing to announce winners to the smart contract...';
+				progress = 10;
+
 				for (const member of selectedTeamAddresses) {
 					if (member.user.walletAddress && member.user.walletAddress !== '') {
-						loadingState = {
-							title: selectedWinningTeam.name,
-							description: selectedTeamAddresses.length - amountOfSuccesses
-						};
+						currentStep = `Announcing to the smart contract, winner: ${member.user.name}`;
+						progress += 10;
+
 						await $announceWinnerMutation.mutateAsync(
 							{
 								hackathonId: hackathon.id,
@@ -126,26 +147,28 @@
 						);
 					} else {
 						toast.warning(
-							`${member.user.name} doesn't have his walletAddress saved in the db, contact them separately.`
+							`${member.user.name} doesn't have their wallet address saved in the db, contact them separately.`
 						);
 					}
 				}
 
-				loadingState = {
-					title: 'Updating Hackathon to Completed State',
-					description: 0
-				};
+				currentStep = 'Updating Hackathon to Completed State';
+				progress = 75;
 
 				await updateHackathonStateInContract({
 					hackathon,
 					newStatus: 'COMPLETED',
 					stateMapping
 				});
+
+				currentStep = 'Finalizing...';
+				progress = 90;
 			} catch (error) {
 				console.error('Failed to announce winner:', error);
 				toast.error('Failed to announce winner');
 			} finally {
-				loadingState = null;
+				loading = false;
+				progress = 100;
 			}
 		} else {
 			toast.error('No team selected');
@@ -184,18 +207,13 @@
 	</Card>
 {/if}
 
-{#if loadingState}
-	<div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-800 bg-opacity-75">
-		<Card>
-			<CardHeader>
-				<CardTitle>Setting Winner</CardTitle>
-			</CardHeader>
-			<CardContent>
-				<p>Setting winner: {loadingState.title}</p>
-				{#if !loadingState.title.includes('Updating')}
-					<p>Remaining: {loadingState.description}</p>
-				{/if}
-			</CardContent>
-		</Card>
-	</div>
-{/if}
+<LoadinOverlay
+	isOpen={loading}
+	title="Creating Hackathon"
+	{currentStep}
+	{progress}
+	error={null}
+	canCancel={progress < 75}
+	timeEstimate="30-60 seconds"
+	{transactionHash}
+/>
