@@ -14,7 +14,7 @@
 
 	export let color: SpinnerTypes['color'] = '#548c56';
 	export let unit: SpinnerTypes['unit'] = 'px';
-	export let duration: SpinnerTypes['duration'] = '1s';
+	export let duration: SpinnerTypes['duration'] = '2s';
 	export let size: SpinnerTypes['size'] = '60';
 	export let pause: SpinnerTypes['pause'] = false;
 	let durationUnit: string = duration.match(durationUnitRegex)?.[0] ?? 's';
