@@ -191,7 +191,7 @@
 					const claimPrizeProps: Parameters<typeof claimContractPrize>[0] = {
 						_hackathonId: hackathon.id,
 						_winnerAddress: recipient,
-						_paymentRef: ethers.utils.hexlify(ethers.utils.toUtf8Bytes(_paymentRefs[index])),
+						_paymentRef: `0x${_paymentRefs[index]}`,
 						_wonAmount: ethers.utils.parseEther(amounts[index].toString()),
 						contract
 					};
