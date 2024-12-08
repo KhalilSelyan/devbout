@@ -308,7 +308,7 @@
 
 <LoadingOverlay
 	isOpen={loading}
-	title="Creating Hackathon"
+	title="Joining team"
 	{currentStep}
 	{progress}
 	error={null}
