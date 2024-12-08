@@ -39,7 +39,9 @@
 	}: {
 		user: User | undefined;
 		hackathon: Hackathon;
-		setCurrentTab: (tab: 'overview' | 'teams' | 'submissions' | 'contributors') => void;
+		setCurrentTab: (
+			tab: 'overview' | 'teams' | 'submissions' | 'contributors' | 'claimPrize' | 'winSelection'
+		) => void;
 	} = $props();
 
 	const walletState = useWalletState();
