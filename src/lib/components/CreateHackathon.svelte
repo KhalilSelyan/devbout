@@ -153,6 +153,7 @@
 		validators: zod(hackathonSchema),
 		dataType: 'json',
 		resetForm: false,
+		validationMethod: 'oninput',
 		onSubmit: async ({ cancel, jsonData, formData }) => {
 			isSubmitting = true;
 			submitButtonText = 'Submitting';
@@ -531,13 +532,19 @@
 						isDialogOpen = false;
 					}}
 					disabled={isSubmitting}
-					variant="destructive">Cancel</Button
+					variant="destructive"
 				>
+					Cancel
+				</Button>
 
 				<Button
 					class="flex items-center gap-2"
 					type="submit"
-					disabled={!isValidCriteria() || isSubmitting}
+					disabled={!isValidCriteria() ||
+						isSubmitting ||
+						!!$errors.basePrize ||
+						!!$errors.name ||
+						!!$errors.description}
 				>
 					{#if submitButtonText === 'Submitting'}
 						<span class="motion-preset-spin motion-duration-2000 motion-loop-infinite">
