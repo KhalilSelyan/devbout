@@ -21,11 +21,12 @@
 	import { useWalletState } from '$lib/appKitState.svelte';
 	import LoadinOverlay from './LoadinOverlay.svelte';
 	import type { hackathonService } from '$lib/server/db/hackathonService';
+	import type { User } from 'better-auth';
 
 	type Teams = NonNullable<Awaited<ReturnType<typeof teamService.getHackathonTeams>>>;
 	type Hackathon = NonNullable<Awaited<ReturnType<typeof hackathonService.getHackathonDetails>>>;
 
-	let { hackathon, teams }: { hackathon: Hackathon; teams: Teams } = $props();
+	let { hackathon, teams, user }: { hackathon: Hackathon; teams: Teams; user: User } = $props();
 
 	let isDialogOpen = $state(false);
 	let loading = $state(false);
@@ -114,6 +115,7 @@
 				console.log({ form });
 				if (form.valid) {
 					trpc.hackathon.getHackathonDetails.utils.invalidate({ hackathonId: hackathon.id });
+					trpc.hackathon.getUserHackathons.utils.invalidate(user.id);
 
 					progress = 100;
 					loading = false;

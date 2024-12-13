@@ -45,7 +45,7 @@
 		</CardContent>
 		<CardFooter class="w-full">
 			{#if user && hackathon}
-				<TeamDialog {teams} {hackathon} />
+				<TeamDialog {user} {teams} {hackathon} />
 			{/if}
 		</CardFooter>
 	</Card>
