@@ -11,6 +11,7 @@
 	import { formatAddress } from '$lib/rn-utils/formatAddress';
 	import { Badge } from './ui/badge';
 	import { useWalletState } from '$lib/appKitState.svelte';
+	import { goto } from '$app/navigation';
 
 	let { user }: { user: User | undefined } = $props();
 
@@ -61,8 +62,13 @@
 								<Button
 									variant="outline"
 									onclick={async () => {
-										await authClient.signOut();
-										location.reload();
+										await authClient.signOut({
+											fetchOptions: {
+												onSuccess: () => {
+													goto('/'); // redirect to landing page
+												}
+											}
+										});
 									}}
 								>
 									<LucideDoorOpen />
