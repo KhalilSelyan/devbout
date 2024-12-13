@@ -13,18 +13,22 @@
 	import type { inferAsyncReturnType } from '@trpc/server';
 	import { Clock, Github, LinkIcon } from 'lucide-svelte';
 	import SubmissionDialog from './SubmissionDialog.svelte';
+	import type { User } from 'better-auth';
 
 	type Hackathon = Awaited<ReturnType<typeof hackathonService.getHackathonDetails>>;
 
 	let {
 		hackathon,
-		userHackathons
+		userHackathons,
+		user
 	}: {
 		hackathon: Hackathon;
 		userHackathons: inferAsyncReturnType<typeof trpcServer.hackathon.getUserHackathons.ssr>;
+		user: User | undefined;
 	} = $props();
 
 	let isUserHackathon = userHackathons?.some((hackathon) => hackathon.id === hackathon.id);
+	let isOrganizer = $derived(user?.id === hackathon?.organizerId);
 </script>
 
 {#if hackathon}
@@ -75,7 +79,7 @@
 			</ul>
 		</CardContent>
 		<CardFooter>
-			{#if isUserHackathon && hackathon && userHackathons}
+			{#if isUserHackathon && hackathon && userHackathons && !isOrganizer}
 				<SubmissionDialog {hackathon} {userHackathons} />
 			{/if}
 		</CardFooter>
