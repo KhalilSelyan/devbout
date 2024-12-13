@@ -99,7 +99,7 @@
 					<TabsTrigger class="w-full" value="contributors">Contributors</TabsTrigger>
 				{/if}
 				<TabsTrigger class="w-full" value="teams">Teams</TabsTrigger>
-				{#if isMemberOfThisHackathon}
+				{#if isMemberOfThisHackathon && !isOrganizer}
 					<TabsTrigger class="w-full" value="submissions">Submissions</TabsTrigger>
 				{/if}
 				{#if isOrganizer && isJudgingPhase}
@@ -120,7 +120,7 @@
 			<TabsContent value="teams">
 				<TeamsTab hackathon={queryData} {teams} {user} />
 			</TabsContent>
-			{#if isMemberOfThisHackathon}
+			{#if isMemberOfThisHackathon && !isOrganizer}
 				<TabsContent value="submissions">
 					<SubmissionsTab hackathon={queryData} userHackathons={$userHackathonsQuery.data} />
 				</TabsContent>
@@ -130,7 +130,7 @@
 					<WinnerSelectionTab {teams} {user} hackathon={queryData} {setCurrentTab} />
 				</TabsContent>
 			{/if}
-			{#if isMemberOfWinningTeam && user && isTeamLeader && isHackathonCompleted && queryData}
+			{#if isMemberOfWinningTeam && user && isTeamLeader && isHackathonCompleted && queryData && !isOrganizer}
 				<TabsContent value="claimPrize">
 					<ClaimPrizeTab {user} hackathon={queryData} />
 				</TabsContent>

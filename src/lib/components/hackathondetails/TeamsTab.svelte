@@ -18,6 +18,8 @@
 
 	let { hackathon, teams, user }: { hackathon: Hackathon; teams: Teams; user: User | undefined } =
 		$props();
+
+	let isOrganizer = $derived(user?.id === hackathon?.organizerId);
 </script>
 
 {#if hackathon}
@@ -44,7 +46,7 @@
 			</ul>
 		</CardContent>
 		<CardFooter class="w-full">
-			{#if user && hackathon}
+			{#if user && hackathon && !isOrganizer}
 				<TeamDialog {user} {teams} {hackathon} />
 			{/if}
 		</CardFooter>
