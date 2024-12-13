@@ -50,7 +50,8 @@
 	let isOrganizer = $derived(user?.id === $hackathonQuery.data?.organizerId);
 	let isJudgingPhase = $derived($hackathonQuery.data?.status === 'JUDGING');
 	let canContribute = $derived(
-		$hackathonQuery.data?.status === 'OPEN' || $hackathonQuery.data?.status === 'ONGOING'
+		($hackathonQuery.data?.status === 'OPEN' || $hackathonQuery.data?.status === 'ONGOING') &&
+			$hackathonQuery.data?.fundingType !== 'FULLY_FUNDED'
 	);
 	let isHackathonCompleted = $derived($hackathonQuery.data?.status === 'COMPLETED');
 	let isMemberOfWinningTeam = $derived(
