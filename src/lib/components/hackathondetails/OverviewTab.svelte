@@ -297,9 +297,9 @@
 					onclick={() => {
 						setCurrentTab('teams');
 					}}
-					disabled={['JUDGING', 'COMPLETED'].includes(hackathon.status)}
+					disabled={['JUDGING', 'COMPLETED', 'PAID'].includes(hackathon.status)}
 				>
-					{#if ['JUDGING', 'COMPLETED'].includes(hackathon.status)}
+					{#if ['JUDGING', 'COMPLETED', 'PAID'].includes(hackathon.status)}
 						Cannot Join This Hackathon Anymore
 					{:else}
 						Join Hackathon

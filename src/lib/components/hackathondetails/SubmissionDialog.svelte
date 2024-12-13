@@ -1,10 +1,12 @@
 <script lang="ts">
+	import { invalidateAll } from '$app/navigation';
 	import { Button, buttonVariants } from '$lib/components/ui/button';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import { Textarea } from '$lib/components/ui/textarea';
 	import { route } from '$lib/ROUTES';
+	import type { hackathonService } from '$lib/server/db/hackathonService';
 	import type { trpcServer } from '$lib/server/server';
 	import { trpc } from '$lib/trpc';
 	import { cn } from '$lib/utils';
@@ -13,23 +15,30 @@
 	import { superForm } from 'sveltekit-superforms';
 	import { zod } from 'sveltekit-superforms/adapters';
 
+	type Hackathon = NonNullable<Awaited<ReturnType<typeof hackathonService.getHackathonDetails>>>;
+
 	let {
-		hackathonId,
+		hackathon,
 		userHackathons
 	}: {
-		hackathonId: string;
-		userHackathons: inferAsyncReturnType<typeof trpcServer.hackathon.getUserHackathons.ssr>;
+		hackathon: Hackathon;
+		userHackathons: NonNullable<
+			inferAsyncReturnType<typeof trpcServer.hackathon.getUserHackathons.ssr>
+		>;
 	} = $props();
 	let isDialogOpen = $state(false);
 	let isSubmitted = $state(false);
-	const currentTeamId =
-		userHackathons?.find((hackathon) => hackathon.id === hackathonId)?.teams[0].id || '';
+	const currentTeamId = userHackathons.find((hack) => hack.id === hackathon.id)?.teams[0].id || '';
+
+	if (currentTeamId === '') {
+		invalidateAll();
+	}
 
 	// Initialize form data
 	const initialData = {
-		hackathonId,
+		hackathonId: hackathon.id,
 		description: '',
-		teamId: '',
+		teamId: currentTeamId,
 		projectName: '',
 		githubUrl: '',
 		submissionUrl: '',
@@ -46,7 +55,7 @@
 		onUpdated: ({ form }) => {
 			if (form.valid) {
 				console.log('Form submitted successfully', form.data);
-				trpc.hackathon.getHackathonDetails.utils.invalidate({ hackathonId });
+				trpc.hackathon.getHackathonDetails.utils.invalidate({ hackathonId: hackathon.id });
 				isDialogOpen = false;
 				isSubmitted = false;
 			} else {
@@ -58,6 +67,8 @@
 	const { form, enhance, errors, message } = sf;
 
 	$form.teamId = currentTeamId;
+
+	let canSubmit = $derived(hackathon.status === 'OPEN' || hackathon.status === 'ONGOING');
 </script>
 
 <Dialog.Root
@@ -66,13 +77,28 @@
 	onOpenChange={(isOpen) => {
 		if (!isOpen) {
 			sf.reset();
+			isDialogOpen = false;
 		}
 	}}
 >
 	<Dialog.Trigger
-		onclick={() => (isDialogOpen = true)}
-		class={cn(buttonVariants({ variant: 'default' }), 'w-full')}>Submit Project</Dialog.Trigger
+		onclick={() => {
+			if (canSubmit) isDialogOpen = true;
+		}}
+		class={cn(
+			buttonVariants({ variant: 'default' }),
+			'w-full',
+			!canSubmit && 'cursor-default opacity-50 hover:bg-primary'
+		)}
+		disabled={!canSubmit}
+		aria-disabled={!canSubmit}
 	>
+		{#if !canSubmit}
+			Cannot submit projects anymore
+		{:else}
+			Submit Project
+		{/if}
+	</Dialog.Trigger>
 	<Dialog.Overlay
 		onclick={() => {
 			isDialogOpen = false;
@@ -91,7 +117,7 @@
 		<form
 			use:enhance
 			action={route('createSubmission /hackathons/[id]', {
-				id: hackathonId
+				id: hackathon.id
 			})}
 			method="POST"
 			class="flex flex-col gap-6"

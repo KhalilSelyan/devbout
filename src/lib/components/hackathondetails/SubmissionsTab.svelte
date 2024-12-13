@@ -75,8 +75,8 @@
 			</ul>
 		</CardContent>
 		<CardFooter>
-			{#if isUserHackathon}
-				<SubmissionDialog hackathonId={hackathon.id} {userHackathons} />
+			{#if isUserHackathon && hackathon && userHackathons}
+				<SubmissionDialog {hackathon} {userHackathons} />
 			{/if}
 		</CardFooter>
 	</Card>

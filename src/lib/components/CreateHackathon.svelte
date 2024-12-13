@@ -272,6 +272,7 @@
 	onOpenChange={(isOpen) => {
 		if (!isOpen) {
 			sf.reset();
+			isDialogOpen = false;
 		} else {
 			form.update(
 				($form) => {
