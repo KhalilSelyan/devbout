@@ -49,6 +49,9 @@
 
 	let isOrganizer = $derived(user?.id === $hackathonQuery.data?.organizerId);
 	let isJudgingPhase = $derived($hackathonQuery.data?.status === 'JUDGING');
+	let canContribute = $derived(
+		$hackathonQuery.data?.status === 'OPEN' || $hackathonQuery.data?.status === 'ONGOING'
+	);
 	let isHackathonCompleted = $derived($hackathonQuery.data?.status === 'COMPLETED');
 	let isMemberOfWinningTeam = $derived(
 		user &&
@@ -62,6 +65,14 @@
 			isMemberOfWinningTeam.members.find(
 				(member) => member.userId === user.id && member.role === 'LEADER'
 			)?.userId === user.id
+	);
+	let isMemberOfThisHackathon = $derived(
+		user &&
+			!!$userHackathonsQuery.data?.find(
+				(hacks) =>
+					hacks.id === hackathon.id &&
+					hacks.teams.find((team) => team.members.find((member) => member.userId === user.id))
+			)
 	);
 
 	let queryData = $derived($hackathonQuery.data);
@@ -83,9 +94,13 @@
 		<Tabs value={currentTab} onValueChange={setCurrentTab}>
 			<TabsList class="flex w-full items-center justify-between">
 				<TabsTrigger class="w-full" value="overview">Overview</TabsTrigger>
-				<TabsTrigger class="w-full" value="contributors">Contributors</TabsTrigger>
+				{#if canContribute}
+					<TabsTrigger class="w-full" value="contributors">Contributors</TabsTrigger>
+				{/if}
 				<TabsTrigger class="w-full" value="teams">Teams</TabsTrigger>
-				<TabsTrigger class="w-full" value="submissions">Submissions</TabsTrigger>
+				{#if isMemberOfThisHackathon}
+					<TabsTrigger class="w-full" value="submissions">Submissions</TabsTrigger>
+				{/if}
 				{#if isOrganizer && isJudgingPhase}
 					<TabsTrigger class="w-full" value="winSelection">Winner Selection</TabsTrigger>
 				{/if}
@@ -96,15 +111,19 @@
 			<TabsContent value="overview">
 				<OverviewTab {user} hackathon={queryData} {setCurrentTab} />
 			</TabsContent>
-			<TabsContent value="contributors">
-				<ContributorsTab hackathon={queryData} />
-			</TabsContent>
+			{#if canContribute}
+				<TabsContent value="contributors">
+					<ContributorsTab hackathon={queryData} />
+				</TabsContent>
+			{/if}
 			<TabsContent value="teams">
 				<TeamsTab hackathon={queryData} {teams} {user} />
 			</TabsContent>
-			<TabsContent value="submissions">
-				<SubmissionsTab hackathon={queryData} userHackathons={$userHackathonsQuery.data} />
-			</TabsContent>
+			{#if isMemberOfThisHackathon}
+				<TabsContent value="submissions">
+					<SubmissionsTab hackathon={queryData} userHackathons={$userHackathonsQuery.data} />
+				</TabsContent>
+			{/if}
 			{#if isOrganizer && isJudgingPhase && user}
 				<TabsContent value="winSelection">
 					<WinnerSelectionTab {teams} {user} hackathon={queryData} {setCurrentTab} />

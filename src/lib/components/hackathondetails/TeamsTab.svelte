@@ -44,8 +44,8 @@
 			</ul>
 		</CardContent>
 		<CardFooter class="w-full">
-			{#if user}
-				<TeamDialog {teams} hackathonId={hackathon.id} />
+			{#if user && hackathon}
+				<TeamDialog {teams} {hackathon} />
 			{/if}
 		</CardFooter>
 	</Card>

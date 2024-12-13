@@ -19,13 +19,13 @@
 	import { contractabi } from '$lib/contractabi';
 	import { appKit } from '$lib/appKit';
 	import { useWalletState } from '$lib/appKitState.svelte';
-	import type { User } from 'better-auth';
 	import LoadinOverlay from './LoadinOverlay.svelte';
+	import type { hackathonService } from '$lib/server/db/hackathonService';
 
 	type Teams = NonNullable<Awaited<ReturnType<typeof teamService.getHackathonTeams>>>;
+	type Hackathon = NonNullable<Awaited<ReturnType<typeof hackathonService.getHackathonDetails>>>;
 
-	let { hackathonId, teams, user }: { hackathonId: string; teams: Teams; user: User | undefined } =
-		$props();
+	let { hackathon, teams }: { hackathon: Hackathon; teams: Teams } = $props();
 
 	let isDialogOpen = $state(false);
 	let loading = $state(false);
@@ -33,7 +33,7 @@
 	let progress = $state(0);
 	let transactionHash = $state('');
 
-	let teamsloaded = trpc.team.getHackathonTeams.query(hackathonId, { initialData: teams });
+	let teamsloaded = trpc.team.getHackathonTeams.query(hackathon.id, { initialData: teams });
 	let teamId = $state(nanoid());
 	const walletState = useWalletState();
 
@@ -91,7 +91,7 @@
 	const createTeamForm = superForm(
 		{
 			id: teamId,
-			hackathonId,
+			hackathonId: hackathon.id,
 			name: '',
 			description: ''
 		},
@@ -99,10 +99,11 @@
 			validators: zod(teamSchema),
 			dataType: 'json',
 			resetForm: true,
+			validationMethod: 'oninput',
 			onSubmit: async ({ cancel }) => {
 				loading = true;
 				const hasGoneThrough = await addParticipantBeforeCreateJoinTeamInDb({
-					_hackathonId: hackathonId
+					_hackathonId: hackathon.id
 				});
 
 				if (!hasGoneThrough) cancel();
@@ -112,7 +113,7 @@
 			onUpdated: ({ form }) => {
 				console.log({ form });
 				if (form.valid) {
-					trpc.hackathon.getHackathonDetails.utils.invalidate({ hackathonId });
+					trpc.hackathon.getHackathonDetails.utils.invalidate({ hackathonId: hackathon.id });
 
 					progress = 100;
 					loading = false;
@@ -128,11 +129,12 @@
 	const joinRequestForm = superForm(
 		{
 			teamId: '',
-			hackathonId,
+			hackathonId: hackathon.id,
 			message: ''
 		},
 		{
 			validators: zod(teamJoinRequestSchema),
+			validationMethod: 'oninput',
 			dataType: 'json',
 			resetForm: true,
 			onSubmit: () => {
@@ -153,6 +155,8 @@
 	function selectTeam(teamId: string) {
 		$joinForm.teamId = teamId; // Update the form state here
 	}
+
+	let cannotJoin = $derived(['JUDGING', 'COMPLETED', 'PAID'].includes(hackathon.status));
 </script>
 
 <Dialog.Root
@@ -162,14 +166,25 @@
 		if (!isOpen) {
 			createTeamForm.reset();
 			joinRequestForm.reset();
+			isDialogOpen = false;
 		}
 	}}
 >
 	<Dialog.Trigger
-		onclick={() => (isDialogOpen = true)}
-		class={cn(buttonVariants({ variant: 'default' }), 'w-full')}
+		onclick={() => {
+			if (!cannotJoin) isDialogOpen = true;
+		}}
+		class={cn(
+			buttonVariants({ variant: 'default' }),
+			'w-full',
+			cannotJoin && 'cursor-default opacity-50 hover:bg-primary'
+		)}
 	>
-		Join/Create Team
+		{#if cannotJoin}
+			Cannot join this hackathon anymore
+		{:else}
+			Join/Create Team
+		{/if}
 	</Dialog.Trigger>
 	<Dialog.Overlay
 		onclick={(e) => {
@@ -194,10 +209,10 @@
 				<form
 					use:createEnhance
 					method="POST"
-					action={route('createTeam /hackathons/[id]', { id: hackathonId })}
+					action={route('createTeam /hackathons/[id]', { id: hackathon.id })}
 					class="flex flex-col gap-4"
 				>
-					<input type="hidden" name="hackathonId" value={hackathonId} />
+					<input type="hidden" name="hackathonId" value={hackathon.id} />
 					<input type="hidden" name="id" value={teamId} />
 
 					<div class="flex flex-col gap-2">
@@ -232,7 +247,12 @@
 						>
 							Cancel
 						</Button>
-						<Button disabled={loading} type="submit">Create Team</Button>
+						<Button
+							disabled={loading || !!$createErrors.description || !!$createErrors.name}
+							type="submit"
+						>
+							Create Team
+						</Button>
 					</div>
 				</form>
 			</Tabs.Content>
@@ -244,7 +264,7 @@
 					<form
 						use:joinEnhance
 						method="POST"
-						action={route('joinTeam /hackathons/[id]', { id: hackathonId })}
+						action={route('joinTeam /hackathons/[id]', { id: hackathon.id })}
 						class="flex flex-col gap-4"
 					>
 						<div class="flex flex-col gap-4">
@@ -283,7 +303,7 @@
 							</div>
 						{/if}
 
-						<input type="hidden" name="hackathonId" value={hackathonId} />
+						<input type="hidden" name="hackathonId" value={hackathon.id} />
 
 						<div class="flex justify-end gap-2">
 							<Button
@@ -296,7 +316,14 @@
 							>
 								Cancel
 							</Button>
-							<Button type="submit" disabled={!$joinForm.teamId || !$joinForm.message || loading}>
+							<Button
+								type="submit"
+								disabled={!$joinForm.teamId ||
+									!$joinForm.message ||
+									!!$joinErrors.message ||
+									!!$joinErrors.teamId ||
+									loading}
+							>
 								Request to Join
 							</Button>
 						</div>
