@@ -1,6 +1,6 @@
 import { createAppKit } from '@reown/appkit';
 import { Ethers5Adapter } from '@reown/appkit-adapter-ethers5';
-import { sepolia } from '@reown/appkit/networks';
+import { mainnet, polygon } from '@reown/appkit/networks';
 
 // 1. Get projectId from https://cloud.reown.com
 const projectId = '6d62b78ac0053e81f7b7efcf2976a249';
@@ -16,11 +16,11 @@ const metadata = {
 // 3. Create a AppKit instance
 export const appKit = createAppKit({
 	adapters: [new Ethers5Adapter()],
-	networks: [sepolia],
+	networks: [mainnet, polygon],
 	metadata,
 	enableCoinbase: true,
 	enableInjected: true,
-	defaultNetwork: sepolia,
+	defaultNetwork: mainnet,
 	projectId,
 	features: {
 		onramp: false,

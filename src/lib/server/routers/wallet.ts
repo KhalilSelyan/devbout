@@ -1,4 +1,4 @@
-import { PLATFORM_WALLET_PRIVATEKEY } from '$env/static/private';
+import { PLATFORM_WALLET_PRIVATEKEY, RN_API_KEY } from '$env/static/private';
 import {
 	PUBLIC_CONTRACT_ADDRESS,
 	PUBLIC_JSONRPC_URL,
@@ -14,8 +14,6 @@ import { ethers } from 'ethers';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import { hackathon, prizePool, team } from '../db/schema';
-import { RequestNetwork, Types } from '@requestnetwork/request-client.js';
-import { EthereumPrivateKeySignatureProvider } from '@requestnetwork/epk-signature';
 
 export const walletRouter = router({
 	contributeToContractBalance: authedProcedure
@@ -124,63 +122,63 @@ export const walletRouter = router({
 		)
 		.mutation(async ({ input }) => {
 			try {
-				// Step 1: Initialize the wallet and provider
-				const walletProvider = new ethers.providers.JsonRpcProvider(PUBLIC_JSONRPC_URL);
+				const { reqParams } = input;
 
-				const epkSignatureProvider = new EthereumPrivateKeySignatureProvider({
-					method: Types.Signature.METHOD.ECDSA,
-					privateKey: PLATFORM_WALLET_PRIVATEKEY
+				const currency = reqParams.requestInfo.currency;
+				const isERC20 = currency.type === 'ERC20';
+
+				// Get decimals from the original currency object (assuming it's passed in the contentData)
+				const originalCurrency = reqParams.contentData?.miscellaneous?.paymentCurrency;
+				const decimals = (originalCurrency as { decimals?: number })?.decimals || 18; // Default to 18 for ETH
+
+				// Determine payment currency format for API
+				let paymentCurrency: string;
+				if (isERC20 && currency.value) {
+					paymentCurrency = `${currency.value}-${currency.network}-${currency.network}`;
+				} else {
+					paymentCurrency = `${currency.value?.toUpperCase() || 'ETH'}-${currency.network}-${currency.network}`;
+				}
+
+				// Step 4: Prepare API request body
+				const apiRequestBody = {
+					payee: reqParams.requestInfo.payee.value,
+					payer: reqParams.requestInfo.payer.value,
+					amount: ethers.utils.formatUnits(reqParams.requestInfo.expectedAmount, decimals),
+					invoiceCurrency: 'USD', // Default to USD for invoice currency
+					paymentCurrency: paymentCurrency,
+					isCryptoToFiatAvailable: false
+				};
+
+				// Step 5: Create request using Request Network API
+				const response = await fetch('https://api.request.network/v2/request', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'x-api-key': RN_API_KEY
+					},
+					body: JSON.stringify(apiRequestBody)
 				});
 
-				// Step 2: Ensure we're on the correct network
-				const chainId = await walletProvider.getNetwork().then((net) => net.chainId);
-
-				if (chainId !== 11155111) {
-					// 11155111 is the chain ID for Sepolia
+				if (!response.ok) {
+					const errorText = await response.text();
+					console.error('Request Network API error:', response.status, errorText);
 					throw new TRPCError({
-						code: 'BAD_REQUEST',
-						message: 'Not on Sepolia network'
+						code: 'INTERNAL_SERVER_ERROR',
+						message: `Request Network API error: ${response.status}`,
+						cause: errorText
 					});
 				}
 
-				// Step 3: Set up the RequestNetwork client
+				const result = await response.json();
 
-				const requestNetwork = new RequestNetwork({
-					nodeConnectionConfig: {
-						baseURL: 'https://sepolia.gateway.request.network' // Ensure this matches your node
-					},
-					signatureProvider: epkSignatureProvider,
-					skipPersistence: true
-				});
-
-				// Step 4: Create the request
-				// @ts-expect-error it goes through
-				const request = await requestNetwork.createRequest(input.reqParams);
-
-				console.log(request.inMemoryInfo);
-
-				const extensions = request.inMemoryInfo?.requestData.extensions;
-				const salt =
-					extensions && extensions['pn-eth-fee-proxy-contract']
-						? extensions['pn-eth-fee-proxy-contract'].values.salt
-						: extensions && extensions['pn-erc20-fee-proxy-contract']
-							? extensions['pn-erc20-fee-proxy-contract']?.values.salt
-							: undefined;
-
-				const requestNetworkPersister = new RequestNetwork({
-					nodeConnectionConfig: {
-						baseURL: 'https://sepolia.gateway.request.network' // Ensure this matches your node
-					},
-					signatureProvider: epkSignatureProvider
-				});
-
-				requestNetworkPersister.persistRequest(request);
+				console.log('Request created successfully:', result);
 
 				return {
-					requestId: request.requestId,
-					salt
+					requestId: result.requestId,
+					paymentReference: result.paymentReference
 				};
 			} catch (error) {
+				console.error('Error creating request:', error);
 				throw new TRPCError({
 					code: 'INTERNAL_SERVER_ERROR',
 					message: 'Failed to create request for claiming',

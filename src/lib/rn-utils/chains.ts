@@ -6,4 +6,4 @@ export const chains = [
 		explorerUrl: 'https://sepolia.etherscan.io',
 		rpcUrl: 'https://rpc.sepolia.org'
 	}
-];
+] as const;

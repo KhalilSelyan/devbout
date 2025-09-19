@@ -39,7 +39,7 @@ export const prepareRequestParameters = ({
 	totalAmountInCrypto: number;
 	payeeIdentity?: string | undefined;
 }) => {
-	const isERC20 = currency.type === Types.RequestLogic.CURRENCY.ERC20;
+	const isERC20 = currency.type === 'ERC20';
 	const currencyValue = isERC20 ? currency.address : 'eth';
 	const amount = utils
 		.parseUnits(totalAmountInCrypto.toFixed(currency.decimals), currency.decimals)
@@ -88,19 +88,17 @@ export const prepareRequestParameters = ({
 			},
 			expectedAmount: amount,
 			payee: {
-				type: Types.Identity.TYPE.ETHEREUM_ADDRESS,
+				type: 'ethereum_address',
 				value: payeeIdentity
 			},
 			payer: {
-				type: Types.Identity.TYPE.ETHEREUM_ADDRESS,
+				type: 'ethereum_address',
 				value: payerAddress
 			},
-			timestamp: Utils.getCurrentTimestampInSecond()
+			timestamp: Math.floor(Date.now() / 1000)
 		},
 		paymentNetwork: {
-			id: isERC20
-				? Types.Extension.PAYMENT_NETWORK_ID.ERC20_FEE_PROXY_CONTRACT
-				: Types.Extension.PAYMENT_NETWORK_ID.ETH_FEE_PROXY_CONTRACT,
+			id: isERC20 ? 'pn-erc20-fee-proxy-contract' : 'pn-eth-fee-proxy-contract',
 			parameters: {
 				paymentNetworkName: currency.network,
 				paymentAddress: platformAddress,
@@ -158,12 +156,13 @@ export const prepareRequestParameters = ({
 				paymentCurrency: {
 					type: currency.type,
 					value: currencyValue,
-					network: currency.network
+					network: currency.network,
+					decimals: currency.decimals
 				}
 			}
 		},
 		signer: {
-			type: Types.Identity.TYPE.ETHEREUM_ADDRESS,
+			type: 'ethereum_address',
 			value: payerAddress
 		}
 	};

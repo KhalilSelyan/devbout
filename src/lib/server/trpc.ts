@@ -54,6 +54,7 @@ export const authedProcedure = publicProcedure.use(timingMiddleware).use(({ ctx,
 	if (!ctx.session || !ctx.user) {
 		throw new TRPCError({ code: 'UNAUTHORIZED' });
 	}
+
 	return next({
 		ctx: {
 			user: ctx.user,

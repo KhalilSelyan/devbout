@@ -1,12 +1,45 @@
-import type { MetaDetail } from '@requestnetwork/types/dist/payment-types';
 import { ethers } from 'ethers';
-import { getChainFromNetwork, getNetworkParams } from './rn-utils/req';
+import { chains } from './rn-utils/chains';
 
 export enum HackathonState {
 	OPEN = 0,
 	ONGOING = 1,
 	JUDGING = 2,
 	COMPLETED = 3
+}
+
+// Simple MetaDetail type for batch payments
+type MetaDetail = {
+	recipient: string;
+	requestAmount: ethers.BigNumber;
+	path: string[];
+	paymentReference: string;
+	feeAmount: ethers.BigNumber;
+	maxToSpend: ethers.BigNumber;
+	maxRateTimespan: ethers.BigNumber;
+};
+
+// Helper function to get chain from network
+function getChainFromNetwork(network: string) {
+	if (network.toLowerCase() === 'sepolia' || network.toLowerCase() === 'eth') {
+		return chains[0];
+	}
+	return undefined;
+}
+
+// Helper function to get network parameters
+function getNetworkParams(chain: (typeof chains)[0]) {
+	return {
+		chainId: ethers.utils.hexValue(chain.chainId),
+		chainName: chain.name,
+		nativeCurrency: {
+			name: chain.currency,
+			symbol: chain.currency,
+			decimals: 18
+		},
+		rpcUrls: [chain.rpcUrl],
+		blockExplorerUrls: [chain.explorerUrl]
+	};
 }
 
 export async function createHackathon({
@@ -144,15 +177,10 @@ export async function executeBatchPayments({
 	contract
 }: {
 	_hackathonId: string;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	metaDetails: MetaDetail[];
 	feeAddress: string;
 	contract: ethers.Contract;
 }) {
-	console.log({ _hackathonId, metaDetails, contract });
-
-	// executeBatchPayments(string,(uint256,(address,uint256,address[],bytes,uint256,uint256,uint256)[])[],address[][],address)
-
 	const pathsToUSD: string[][] = [];
 	const tx = await contract.executeBatchPayments(_hackathonId, metaDetails, pathsToUSD, feeAddress);
 

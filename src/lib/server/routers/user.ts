@@ -3,7 +3,7 @@ import { userService } from '$lib/server/db/userService';
 import { TRPCError } from '@trpc/server';
 import { profileUpdateSchema } from '$lib/zodValidations/userSchema';
 import { z } from 'zod';
-import { RequestNetwork, Types } from '@requestnetwork/request-client.js';
+import { RN_API_KEY } from '$env/static/private';
 
 export const userRouter = router({
 	getProfile: authedProcedure.input(z.string()).query(async ({ input }) => {
@@ -71,44 +71,73 @@ export const userRouter = router({
 				];
 			}
 			try {
-				const requests = await new RequestNetwork({
-					nodeConnectionConfig: {
-						baseURL: 'https://sepolia.gateway.request.network'
+				// Use V2 API to get user requests
+				const response = await fetch(
+					`https://api.request.network/v2/request?payer=${input.address}`,
+					{
+						headers: {
+							'x-api-key': RN_API_KEY
+						}
 					}
-				}).fromIdentity({
-					type: Types.Identity.TYPE.ETHEREUM_ADDRESS,
-					value: input.address
-				});
-				const userRequests = requests
-					.map((req) => {
-						return {
-							// @ts-expect-error this is fine
-							contentData: req.contentData,
-							// @ts-expect-error this is fine
-							requestData: req.requestData,
-							// @ts-expect-error this is fine
-							balance: req.balance,
-							requestId: req.requestId
-						};
-					})
-					.filter((t) => t != undefined);
+				);
 
-				return (
-					userRequests ?? [
+				if (!response.ok) {
+					console.error('Request Network API error:', response.status);
+					return [
 						{
 							contentData: { creationDate: '' },
 							requestData: { state: '', currency: { value: '' } },
 							balance: { balance: '' },
 							requestId: ''
 						}
-					]
+					];
+				}
+
+				const requests = await response.json();
+
+				// Transform V2 API response to match expected format
+				const userRequests = requests.map(
+					(req: {
+						createdAt?: string;
+						status?: string;
+						paymentCurrency?: string;
+						amount?: string;
+						requestId?: string;
+					}) => ({
+						contentData: {
+							creationDate: req.createdAt || ''
+						},
+						requestData: {
+							state: req.status || '',
+							currency: { value: req.paymentCurrency || '' }
+						},
+						balance: {
+							balance: req.amount || ''
+						},
+						requestId: req.requestId || ''
+					})
 				);
+
+				return userRequests.length > 0
+					? userRequests
+					: [
+							{
+								contentData: { creationDate: '' },
+								requestData: { state: '', currency: { value: '' } },
+								balance: { balance: '' },
+								requestId: ''
+							}
+						];
 			} catch (error) {
-				throw new TRPCError({
-					code: 'INTERNAL_SERVER_ERROR',
-					message: 'Failed to fetch user requests',
-					cause: error
-				});
+				console.error('Failed to fetch user requests:', error);
+				return [
+					{
+						contentData: { creationDate: '' },
+						requestData: { state: '', currency: { value: '' } },
+						balance: { balance: '' },
+						requestId: ''
+					}
+				];
 			}
 		})
 });
